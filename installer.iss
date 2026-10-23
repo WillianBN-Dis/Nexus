@@ -2,11 +2,13 @@
 AppId=Nexus.DatabaseStudio
 AppName=Nexus
 AppVersion=0.6.0
+AppVerName=Nexus 0.6.0 — Atualização de interface UI.1
+VersionInfoVersion=0.6.0.1
 DefaultDirName={localappdata}\Programs\Nexus
 DefaultGroupName=Nexus
 PrivilegesRequired=lowest
 OutputDir=dist
-OutputBaseFilename=Nexus-Setup-0.6.0
+OutputBaseFilename=Nexus-Setup-0.6.0-ui.1
 Compression=lzma2
 SolidCompression=yes
 UninstallDisplayIcon={app}\Nexus.exe
@@ -17,7 +19,7 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "Criar um atalho na área de trabalho"; GroupDescription: "Atalhos:"; Flags: unchecked
 [Files]
-Source: "dist-0.6.0\Nexus\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist-0.6.0-ui.1\Nexus\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 [Icons]
 Name: "{group}\Nexus"; Filename: "{app}\Nexus.exe"
 Name: "{autodesktop}\Nexus"; Filename: "{app}\Nexus.exe"; Tasks: desktopicon

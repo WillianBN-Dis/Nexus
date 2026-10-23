@@ -27,7 +27,10 @@ def main():
             if col['name']=='idade':entry.delete(0,'end');entry.insert(0,'30')
         dialog.submit();app.update()
         assert len(v.records)==1
-        v.data_grid.selection_set('0')
+        assert v.actions[1].cget('state')=='disabled'
+        assert v.actions[2].cget('state')=='disabled'
+        v.data_grid.selection_set('0');app.update()
+        assert v.actions[1].cget('state')=='normal'
         dialog=v.edit();app.update()
         for col,entry,mode in dialog.fields:
             if col['name']=='nome':entry.delete(0,'end');entry.insert(0,'Ana Maria')
@@ -43,7 +46,9 @@ def main():
         app.after(200,app.quit);app.mainloop()
         assert v.data_grid.winfo_viewable(), 'Visual deve permanecer visível após troca rápida de abas'
         if '--preview' in __import__('sys').argv:
-            app.state('zoomed');app.after(120000,app.destroy);app.mainloop();return
+            app.geometry('1280x850') if '--compact' in __import__('sys').argv else app.state('zoomed')
+            if '--form' in __import__('sys').argv:v.create_table()
+            app.after(120000,app.destroy);app.mainloop();return
         v.data_grid.selection_set('0')
         with patch('visual.messagebox.askyesno',return_value=True):v.delete()
         assert not v.records

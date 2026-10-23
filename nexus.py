@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 import customtkinter as ctk
 from core import Store
+from build_info import BUILD
 from visual import VisualEditor
 from ui import BG,PANEL,SURFACE,TEXT,MUTED,ACCENT,frame,label,button,brand,load_logo,style_window,center_window,NameDialog,Tabs
 
@@ -248,7 +249,7 @@ class Nexus(ctk.CTk):
         footer=frame(sidebar,SURFACE,16)
         footer.pack(side='bottom',fill='x',padx=14,pady=14)
         label(footer,self.username or 'Minha conta',11,TEXT,True).pack(anchor='w',padx=14,pady=(10,0))
-        label(footer,'Conta local  ·  v0.6.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
+        label(footer,'Conta local  ·  '+BUILD,9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
         button(footer,'Sair da conta',self.login_screen).pack(fill='x',padx=10,pady=(0,10))
         self.banks=ttk.Treeview(sidebar,columns=('name','path'),displaycolumns=(),show='tree',selectmode='browse')
         self.banks.column('#0',width=205,stretch=True)
@@ -457,7 +458,7 @@ def main():
     logging.basicConfig(filename=folder/'nexus.log',level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(message)s',encoding='utf-8')
     try:
-        logging.info('Nexus 0.6.0: iniciando')
+        logging.info('Nexus %s: iniciando',BUILD)
         app=Nexus()
         def callback_error(exc_type,value,tb):
             logging.error('Erro na interface',exc_info=(exc_type,value,tb))
