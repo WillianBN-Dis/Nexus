@@ -19,7 +19,14 @@ class Nexus(ctk.CTk):
         self.username=''
         self.cooldown=False
         self.screen=None
+        self.layout_job=None
+        self.layout_fonts=[]
+        self.layout_controls=[]
+        self.layout_images=[]
+        self.layout_scale=None
+        self.layout_mode=None
         self.setup_styles()
+        self.bind('<Configure>',self.schedule_layout,add='+')
         self.bind('<Control-Return>',lambda event:self.guard(self.run) if self.store.user else None)
         self.login_screen()
         self.after(150,self.finish_startup)
@@ -45,7 +52,74 @@ class Nexus(ctk.CTk):
         style.map('Treeview.Heading',background=[('active',SURFACE)])
         style.layout('Treeview',[('Treeview.treearea',{'sticky':'nswe'})])
 
+    def schedule_layout(self,event=None):
+        if event is not None and event.widget is not self: return
+        if self.layout_job is not None: self.after_cancel(self.layout_job)
+        self.layout_job=self.after(90,self.apply_layout)
+
+    def track_layout(self,mode):
+        self.layout_mode=mode
+        self.layout_fonts=[]
+        self.layout_controls=[]
+        self.layout_images=[]
+        def collect(widget):
+            if isinstance(widget,(ctk.CTkLabel,ctk.CTkButton,ctk.CTkEntry,ctk.CTkCheckBox,ctk.CTkTextbox)):
+                value=widget.cget('font')
+                if isinstance(value,tuple):
+                    family,size,*extra=value
+                else:
+                    actual=value.actual()
+                    family,size=actual['family'],actual['size']
+                    extra=['bold'] if actual['weight']=='bold' else []
+                self.layout_fonts.append((widget,family,abs(size),extra))
+                if isinstance(widget,ctk.CTkLabel):
+                    image=widget.cget('image')
+                    if isinstance(image,ctk.CTkImage): self.layout_images.append((image,image.cget('size')))
+                if isinstance(widget,(ctk.CTkButton,ctk.CTkEntry)):
+                    self.layout_controls.append((widget,widget.cget('height')))
+                return
+            for child in widget.winfo_children(): collect(child)
+        collect(self.screen)
+        self.layout_scale=None
+        self.schedule_layout()
+
+    def apply_layout(self):
+        self.layout_job=None
+        if not self.screen or not self.screen.winfo_exists(): return
+        # Tk reports physical pixels; the layout uses CustomTkinter's logical units.
+        widget_scale=self.screen._get_widget_scaling()
+        width=self.screen.winfo_width()/widget_scale
+        height=self.screen.winfo_height()/widget_scale
+        scale=min(1.65,max(1.0,min(width/1280,height/850)))
+        scale=round(scale/0.05)*0.05
+        if self.layout_mode=='login':
+            self.login_shell.configure(width=min(width-56,2050),height=height-56)
+            form_width=min(680,max(340,(min(width-56,2050)/2)-80))
+            self.login_host.grid_columnconfigure(1,minsize=int(form_width))
+            self.login_visual.configure(height=int(245*scale))
+        else:
+            self.sidebar.configure(width=int(252*min(scale,1.3)))
+            self.sql.configure(height=max(6,min(14,int(6*height/850))),font=('Consolas',round(12*scale)))
+            self.result_tabs.configure(height=max(170,int(height*.28)),segmented_button_font=('Segoe UI',round(11*scale)))
+        if scale==self.layout_scale: return
+        self.layout_scale=scale
+        for widget,family,size,extra in self.layout_fonts:
+            widget.configure(font=(family,round(size*scale),*extra))
+        for widget,base in self.layout_controls:
+            widget.configure(height=round(base*scale))
+        for image,(image_width,image_height) in self.layout_images:
+            image.configure(size=(round(image_width*scale),round(image_height*scale)))
+        style=ttk.Style(self)
+        style.configure('Treeview',font=('Segoe UI',round(10*scale)),rowheight=round(40*scale))
+        style.configure('Treeview.Heading',font=('Segoe UI Semibold',round(10*scale)))
+        if self.layout_mode=='login':
+            self.login_visual.event_generate('<Configure>')
+
     def clear(self):
+        if self.layout_job is not None:
+            self.after_cancel(self.layout_job)
+            self.layout_job=None
+        self.layout_mode=None
         if self.screen is not None: self.screen.destroy()
         self.screen=frame(self,BG)
         self.screen.pack(fill='both',expand=True)
@@ -57,30 +131,38 @@ class Nexus(ctk.CTk):
     def login_screen(self):
         self.store.user=None
         self.clear()
-        if self.winfo_viewable(): self.after_idle(lambda:center_window(self))
         shell=frame(self.screen)
-        shell.pack(fill='both',expand=True,padx=28,pady=28)
+        self.login_shell=shell
+        shell.configure(width=1224,height=794)
+        shell.place(relx=.5,rely=.5,anchor='center')
+        shell.grid_propagate(False)
         shell.columnconfigure(0,weight=1,uniform='login')
         shell.columnconfigure(1,weight=1,uniform='login')
         shell.rowconfigure(0,weight=1)
         story=frame(shell,PANEL,28)
         story.grid(row=0,column=0,sticky='nsew',padx=(0,20))
         brand(story,38).pack(anchor='w',padx=34,pady=(30,0))
-        visual=ctk.CTkCanvas(story,bg=PANEL,highlightthickness=0,height=245)
+        story_body=frame(story)
+        story_body.pack(fill='x',expand=True)
+        visual=ctk.CTkCanvas(story_body,bg=PANEL,highlightthickness=0,height=245)
+        self.login_visual=visual
         visual.pack(fill='x',padx=24,pady=(22,0))
         def orbit(event):
             visual.delete('all')
-            cx,cy=event.width/2,125
+            visual_scale=min(1.65,max(1,visual.winfo_height()/245))
+            cx,cy=visual.winfo_width()/2,visual.winfo_height()/2
             for radius,color in [(110,'#20253c'),(82,'#2d2b4a'),(52,'#454065')]:
+                radius*=visual_scale
                 visual.create_oval(cx-radius,cy-radius,cx+radius,cy+radius,outline=color,width=1)
-            visual.create_line(cx-88,cy+48,cx,cy,cx+92,cy-42,fill='#65578e',width=2,smooth=True)
+            visual.create_line(cx-88*visual_scale,cy+48*visual_scale,cx,cy,cx+92*visual_scale,cy-42*visual_scale,fill='#65578e',width=2,smooth=True)
             for x,y,r,color in [(cx-88,cy+48,8,'#8cceeb'),(cx+92,cy-42,10,ACCENT),(cx,cy,29,'#302c4b')]:
+                x=cx+(x-cx)*visual_scale; y=cy+(y-cy)*visual_scale; r*=visual_scale
                 visual.create_oval(x-r,y-r,x+r,y+r,fill=color,outline='')
-            visual.create_text(cx,cy,text='N',font=('Segoe UI',25,'bold'),fill='#dfd5ff')
+            visual.create_text(cx,cy,text='N',font=('Segoe UI',round(25*visual_scale),'bold'),fill='#dfd5ff')
         visual.bind('<Configure>',orbit)
-        label(story,'Tudo conectado.\nTudo no seu controle.',30,bold=True).pack(anchor='w',padx=34,pady=(12,12))
-        label(story,'Um espaço tranquilo para explorar, organizar\ne dar vida aos seus dados.',12,MUTED).pack(anchor='w',padx=34)
-        badges=frame(story)
+        label(story_body,'Tudo conectado.\nTudo no seu controle.',30,bold=True).pack(anchor='w',padx=34,pady=(12,12))
+        label(story_body,'Um espaço tranquilo para explorar, organizar\ne dar vida aos seus dados.',12,MUTED).pack(anchor='w',padx=34)
+        badges=frame(story_body)
         badges.pack(anchor='w',padx=34,pady=26)
         for text in ['SQLite','Local','Seu espaço']:
             chip=frame(badges,SURFACE,14)
@@ -89,8 +171,15 @@ class Nexus(ctk.CTk):
         label(story,'NEXUS  /  DATABASE STUDIO',9,MUTED).pack(side='bottom',anchor='w',padx=34,pady=24)
         host=frame(shell)
         host.grid(row=0,column=1,sticky='nsew')
+        self.login_host=host
+        host.grid_columnconfigure(0,weight=1)
+        host.grid_columnconfigure(1,minsize=460)
+        host.grid_columnconfigure(2,weight=1)
+        host.grid_rowconfigure(0,weight=1)
+        host.grid_rowconfigure(2,weight=1)
         form=frame(host)
-        form.pack(expand=True,fill='x',padx=30)
+        self.login_form=form
+        form.grid(row=1,column=1,sticky='ew')
         label(form,'BEM-VINDO DE VOLTA',10,ACCENT,bold=True).pack(anchor='w')
         label(form,'Seu espaço começa aqui.',27,bold=True).pack(anchor='w',pady=(12,8))
         label(form,'Entre para continuar suas ideias.',12,MUTED).pack(anchor='w',pady=(0,30))
@@ -135,6 +224,7 @@ class Nexus(ctk.CTk):
             except Exception as error: feedback.config(text=str(error),fg='#ffa4ba')
         button(form,'Criar uma conta local',register).pack(fill='x',pady=(12,24))
         label(form,'Sua conta fica neste computador.\nUse pelo menos 10 caracteres na senha.',10,MUTED).pack(anchor='w')
+        self.track_layout('login')
         name.focus_set()
 
     def dashboard(self):
@@ -142,6 +232,7 @@ class Nexus(ctk.CTk):
         sidebar=frame(self.screen,PANEL,24,width=252)
         sidebar.pack(side='left',fill='y',padx=(18,0),pady=18)
         sidebar.pack_propagate(False)
+        self.sidebar=sidebar
         brand(sidebar,34).pack(anchor='w',padx=22,pady=(22,24))
         label(sidebar,'SEU ESPAÇO',9,MUTED,True).pack(anchor='w',padx=24)
         button(sidebar,'＋  Novo banco de dados',lambda:self.guard(self.create),primary=True).pack(fill='x',padx=18,pady=(12,24))
@@ -154,7 +245,7 @@ class Nexus(ctk.CTk):
         footer=frame(sidebar,SURFACE,16)
         footer.pack(side='bottom',fill='x',padx=14,pady=14)
         label(footer,self.username or 'Minha conta',11,TEXT,True).pack(anchor='w',padx=14,pady=(10,0))
-        label(footer,'Conta local  ·  v0.4.1',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
+        label(footer,'Conta local  ·  v0.5.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
         button(footer,'Sair da conta',self.login_screen).pack(fill='x',padx=10,pady=(0,10))
         self.banks=ttk.Treeview(sidebar,columns=('name','path'),displaycolumns=(),show='tree',selectmode='browse')
         self.banks.column('#0',width=205,stretch=True)
@@ -240,6 +331,7 @@ class Nexus(ctk.CTk):
         self.result_empty=label(inner,'◇   Seus dados ganham forma aqui.\nExecute uma consulta para ver os resultados.',11,MUTED)
         self.result_empty.place(relx=.5,rely=.5,anchor='center')
         self.refresh()
+        self.track_layout('dashboard')
 
     def highlight_sql(self):
         import re
@@ -351,7 +443,7 @@ def main():
     logging.basicConfig(filename=folder/'nexus.log',level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(message)s',encoding='utf-8')
     try:
-        logging.info('Nexus 0.4.1: iniciando')
+        logging.info('Nexus 0.5.0: iniciando')
         app=Nexus()
         def callback_error(exc_type,value,tb):
             logging.error('Erro na interface',exc_info=(exc_type,value,tb))

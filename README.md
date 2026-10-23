@@ -1,4 +1,4 @@
-# Nexus 0.4.1
+# Nexus 0.5.0
 
 Aplicativo desktop Windows para bancos SQLite locais. Cadastro e login por usuário, criação e renomeação de bancos, editor SQL para tabelas e registros, exclusão para a Lixeira e transferência entre pastas/discos.
 
@@ -8,10 +8,10 @@ Python 3.12: `python -m pip install -r requirements.txt` e `python nexus.py`.
 ## Gerar instalador
 Instale PyInstaller 6.22.3 e Inno Setup 6. Execute:
 ```
-python -m PyInstaller --noconfirm --clean --windowed --onedir --name Nexus --icon assets/nexus.ico --add-data "assets;assets" --collect-all customtkinter --distpath dist-0.4.1 --workpath build-0.4.1 nexus.py
+python -m PyInstaller --noconfirm --clean --windowed --onedir --name Nexus --icon assets/nexus.ico --add-data "assets;assets" --collect-all customtkinter --distpath dist-0.5.0 --workpath build-0.5.0 nexus.py
 iscc installer.iss
 ```
-Saída: `dist/Nexus-Setup-0.4.1.exe`. Instalador por usuário, com atalhos e desinstalador. Não requer Python no computador de destino. Binário ainda sem assinatura digital.
+Saída: `dist/Nexus-Setup-0.5.0.exe`. Instalador por usuário, com atalhos e desinstalador. Não requer Python no computador de destino. Binário ainda sem assinatura digital.
 
 ## Dados e limites
 Contas e catálogo: `%LOCALAPPDATA%/Nexus`. Senhas com scrypt e salt aleatório. Bancos separados por conta no aplicativo; arquivos não são criptografados e continuam acessíveis a quem tem acesso ao Windows. Não há login online, sincronização, recuperação de senha ou suporte a PostgreSQL/MySQL nesta versão.
@@ -37,4 +37,9 @@ A tela de entrada abre restaurada em 1280 × 850 e centralizada na área útil d
 ## Correção de abertura 0.4.1
 A janela principal não é mais ocultada durante a inicialização. A centralização ocorre após a janela estar mapeada, usando Tk sem laços de eventos aninhados nem chamadas de monitor via ctypes. A aparência nativa é opcional e falhas não impedem a exibição. Diagnósticos de abertura e erros são gravados em `%LOCALAPPDATA%/Nexus/nexus.log`.
 
-Validação do executável: `dist-0.4.1/Nexus/Nexus.exe --startup-check` abre a janela, confirma visibilidade após 2 segundos e encerra. A distribuição corrigida está em `dist-0.4.1/Nexus/`, e o instalador em `dist/Nexus-Setup-0.4.1.exe`.
+Validação do executável: `dist-0.5.0/Nexus/Nexus.exe --startup-check` abre a janela, confirma visibilidade após 2 segundos e encerra. A distribuição corrigida está em `dist-0.5.0/Nexus/`, e o instalador em `dist/Nexus-Setup-0.5.0.exe`.
+
+## Layout adaptável 0.5.0
+O login mantém duas colunas centralizadas com largura máxima de 2.050 unidades lógicas, formulário de até 680 e conteúdo visual centralizado verticalmente. Tipografia, ícones e controles crescem até 65% conforme a altura e largura disponíveis. Ao reduzir a janela, os tamanhos retornam ao normal sem perder os campos preenchidos. No painel, a barra lateral, o editor e a área de resultados se adaptam ao espaço. A escala respeita o DPI do CustomTkinter e é aplicada após o redimensionamento, sem reconstruir a tela.
+
+Validação de layout: `python test_layout.py --dashboard`.
