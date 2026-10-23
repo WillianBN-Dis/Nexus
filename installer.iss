@@ -1,15 +1,17 @@
 ﻿[Setup]
 AppId=Nexus.DatabaseStudio
 AppName=Nexus
-AppVersion=0.2.0
+AppVersion=0.3.0
 DefaultDirName={localappdata}\Programs\Nexus
 DefaultGroupName=Nexus
 PrivilegesRequired=lowest
 OutputDir=dist
-OutputBaseFilename=Nexus-Setup-0.2.0
+OutputBaseFilename=Nexus-Setup-0.3.0
 Compression=lzma2
 SolidCompression=yes
 UninstallDisplayIcon={app}\Nexus.exe
+SetupIconFile=assets\nexus.ico
+WizardStyle=modern
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 [Tasks]
