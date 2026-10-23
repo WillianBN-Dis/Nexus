@@ -5,3 +5,5 @@ dist/
 *.spec
 *.sqlite*
 .env
+
+*-output.log
