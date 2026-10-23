@@ -4,7 +4,7 @@ from core import Store
 from nexus import Nexus
 
 def settle(app):
-    app.after(250,app.quit)
+    app.after(700,app.quit)
     app.mainloop()
 
 def main():
@@ -24,7 +24,7 @@ def main():
             app.store.register('layout','temporary12345'); app.store.login('layout','temporary12345')
             app.username='Layout'
             ident=app.store.create('Projeto Nexus')
-            app.dashboard();settle(app)
+            app.dashboard();app.workspace.set('Editor SQL');settle(app)
             app.banks.selection_set(ident);app.on_selection();app.update()
             app.sql.delete('1.0','end');app.sql.insert('1.0',"SELECT 'Nexus' AS projeto, 42 AS resultado")
             app.run();app.result_tabs.set('Tabela');settle(app)

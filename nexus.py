@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 import customtkinter as ctk
 from core import Store
-from ui import BG,PANEL,SURFACE,TEXT,MUTED,ACCENT,frame,label,button,brand,load_logo,style_window,center_window,NameDialog
+from visual import VisualEditor
+from ui import BG,PANEL,SURFACE,TEXT,MUTED,ACCENT,frame,label,button,brand,load_logo,style_window,center_window,NameDialog,Tabs
 
 ctk.set_appearance_mode('dark')
 ctk.set_default_color_theme('blue')
@@ -27,7 +28,7 @@ class Nexus(ctk.CTk):
         self.layout_mode=None
         self.setup_styles()
         self.bind('<Configure>',self.schedule_layout,add='+')
-        self.bind('<Control-Return>',lambda event:self.guard(self.run) if self.store.user else None)
+        self.bind('<Control-Return>',lambda event:self.guard(self.run) if self.store.user and self.workspace.get()=='Editor SQL' else None)
         self.login_screen()
         self.after(150,self.finish_startup)
 
@@ -63,7 +64,7 @@ class Nexus(ctk.CTk):
         self.layout_controls=[]
         self.layout_images=[]
         def collect(widget):
-            if isinstance(widget,(ctk.CTkLabel,ctk.CTkButton,ctk.CTkEntry,ctk.CTkCheckBox,ctk.CTkTextbox)):
+            if isinstance(widget,(ctk.CTkLabel,ctk.CTkButton,ctk.CTkEntry,ctk.CTkCheckBox,ctk.CTkTextbox,ctk.CTkOptionMenu)):
                 value=widget.cget('font')
                 if isinstance(value,tuple):
                     family,size,*extra=value
@@ -75,7 +76,7 @@ class Nexus(ctk.CTk):
                 if isinstance(widget,ctk.CTkLabel):
                     image=widget.cget('image')
                     if isinstance(image,ctk.CTkImage): self.layout_images.append((image,image.cget('size')))
-                if isinstance(widget,(ctk.CTkButton,ctk.CTkEntry)):
+                if isinstance(widget,(ctk.CTkButton,ctk.CTkEntry,ctk.CTkOptionMenu)):
                     self.layout_controls.append((widget,widget.cget('height')))
                 return
             for child in widget.winfo_children(): collect(child)
@@ -100,7 +101,9 @@ class Nexus(ctk.CTk):
         else:
             self.sidebar.configure(width=int(252*min(scale,1.3)))
             self.sql.configure(height=max(6,min(14,int(6*height/850))),font=('Consolas',round(12*scale)))
-            self.result_tabs.configure(height=max(170,int(height*.28)),segmented_button_font=('Segoe UI',round(11*scale)))
+            self.result_tabs.configure(height=max(140,int(height*.23)),segmented_button_font=('Segoe UI',round(11*scale)))
+            self.workspace.configure(segmented_button_font=('Segoe UI',round(12*scale)))
+            self.visual.tabs.configure(segmented_button_font=('Segoe UI',round(11*scale)))
         if scale==self.layout_scale: return
         self.layout_scale=scale
         for widget,family,size,extra in self.layout_fonts:
@@ -245,7 +248,7 @@ class Nexus(ctk.CTk):
         footer=frame(sidebar,SURFACE,16)
         footer.pack(side='bottom',fill='x',padx=14,pady=14)
         label(footer,self.username or 'Minha conta',11,TEXT,True).pack(anchor='w',padx=14,pady=(10,0))
-        label(footer,'Conta local  ·  v0.5.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
+        label(footer,'Conta local  ·  v0.6.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
         button(footer,'Sair da conta',self.login_screen).pack(fill='x',padx=10,pady=(0,10))
         self.banks=ttk.Treeview(sidebar,columns=('name','path'),displaycolumns=(),show='tree',selectmode='browse')
         self.banks.column('#0',width=205,stretch=True)
@@ -273,7 +276,17 @@ class Nexus(ctk.CTk):
             item.pack(side='left',padx=(0,8))
             self.selection_buttons.append(item)
         button(tools,'↻  Atualizar',lambda:self.guard(self.refresh),width=105).pack(side='right')
-        editor=frame(main,PANEL,22)
+        self.workspace=Tabs(main,fg_color=BG,corner_radius=16,
+            segmented_button_fg_color=SURFACE,segmented_button_selected_color='#453960',
+            segmented_button_unselected_color=SURFACE,text_color=TEXT,anchor='nw',
+            command=lambda:self.guard(self.visual.refresh_tables))
+        self.workspace.pack(fill='both',expand=True)
+        self.workspace.add('Visual')
+        self.workspace.add('Editor SQL')
+        self.visual=VisualEditor(self.workspace.tab('Visual'),self.store,self.guard)
+        self.visual.pack(fill='both',expand=True,pady=(4,8))
+        sql_parent=self.workspace.tab('Editor SQL')
+        editor=frame(sql_parent,PANEL,22)
         editor.pack(fill='x')
         editorbar=frame(editor)
         editorbar.pack(fill='x',padx=20,pady=(14,10))
@@ -298,14 +311,14 @@ class Nexus(ctk.CTk):
         execute.pack(side='left')
         self.selection_buttons.append(execute)
         label(actions,'Uma instrução  ·  Até 1.000 linhas',9,MUTED).pack(side='right')
-        resultbar=frame(main)
+        resultbar=frame(sql_parent)
         resultbar.pack(fill='x',pady=(18,10))
         label(resultbar,'Resultados',13,bold=True).pack(side='left')
         self.status=label(resultbar,'Pronto para explorar',9,MUTED)
         self.status.pack(side='right')
-        results=frame(main,PANEL,20)
+        results=frame(sql_parent,PANEL,20)
         results.pack(fill='both',expand=True)
-        self.result_tabs=ctk.CTkTabview(results,fg_color=PANEL,corner_radius=16,
+        self.result_tabs=Tabs(results,fg_color=PANEL,corner_radius=16,
             segmented_button_fg_color=SURFACE,segmented_button_selected_color='#453960',
             segmented_button_selected_hover_color='#554572',segmented_button_unselected_color=SURFACE,
             segmented_button_unselected_hover_color='#2b324a',text_color=TEXT,anchor='nw',height=170)
@@ -358,6 +371,7 @@ class Nexus(ctk.CTk):
         self.result_empty.place(relx=.5,rely=.5,anchor='center')
         self.status.config(text='Pronto para explorar')
         self.set_result_text('Execute uma consulta para visualizar o resultado.\nOs mesmos dados estarão disponíveis na aba Tabela.')
+        if hasattr(self,'visual'): self.guard(lambda:self.visual.set_database(rows[0] if rows else None))
 
     def selected(self):
         rows=self.banks.selection()
@@ -443,7 +457,7 @@ def main():
     logging.basicConfig(filename=folder/'nexus.log',level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(message)s',encoding='utf-8')
     try:
-        logging.info('Nexus 0.5.0: iniciando')
+        logging.info('Nexus 0.6.0: iniciando')
         app=Nexus()
         def callback_error(exc_type,value,tb):
             logging.error('Erro na interface',exc_info=(exc_type,value,tb))

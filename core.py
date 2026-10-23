@@ -97,3 +97,114 @@ class Store:
         from send2trash import send2trash
         send2trash(str(source))
         with self.meta() as c: c.execute('DELETE FROM databases WHERE id=?',(ident,))
+
+    @staticmethod
+    def quote_name(name):
+        if not isinstance(name,str) or not name.strip() or '\x00' in name or len(name)>128:
+            raise ValueError('Use um nome de 1 a 128 caracteres.')
+        return '"'+name.replace('"','""')+'"'
+
+    @contextmanager
+    def visual_connection(self,ident):
+        path=Path(self.get(ident)[2])
+        if not path.is_file(): raise ValueError('Conecte o disco onde este banco está salvo.')
+        with closing(sqlite3.connect(path.resolve().as_uri()+'?mode=rw',uri=True)) as connection:
+            connection.execute('PRAGMA foreign_keys=ON')
+            import time
+            deadline=time.monotonic()+5
+            connection.set_progress_handler(lambda: int(time.monotonic()>deadline),1000)
+            with connection: yield connection
+
+    def tables(self,ident):
+        with self.visual_connection(ident) as c:
+            return [row[0] for row in c.execute("SELECT name FROM sqlite_schema WHERE type='table' AND substr(name,1,7)!='sqlite_' ORDER BY name")]
+
+    def table_info(self,ident,table):
+        with self.visual_connection(ident) as c: return self._table_info(c,table)
+
+    def _table_info(self,c,table):
+        quoted=self.quote_name(table)
+        if not c.execute("SELECT 1 FROM sqlite_schema WHERE type='table' AND name=? AND substr(name,1,7)!='sqlite_'",(table,)).fetchone():
+            raise ValueError('Tabela não encontrada. Atualize a lista.')
+        columns=[dict(zip(('cid','name','type','required','default','pk','hidden'),row)) for row in c.execute(f'PRAGMA table_xinfo({quoted})')]
+        identity=[]
+        names={col['name'].casefold() for col in columns}
+        for alias in ('rowid','_rowid_','oid'):
+            if alias in names: continue
+            try: c.execute(f'SELECT {alias} FROM {quoted} LIMIT 0')
+            except sqlite3.OperationalError: break
+            identity=[alias]; break
+        if not identity:
+            identity=[col['name'] for col in sorted(columns,key=lambda col:col['pk']) if col['pk']]
+        return {'columns':[col for col in columns if col['hidden']!=1], 'identity':identity}
+
+    def create_table(self,ident,table,columns):
+        quoted=self.quote_name(table.strip())
+        if table.strip().casefold().startswith('sqlite_'): raise ValueError('O prefixo sqlite_ é reservado.')
+        definitions=['"id" INTEGER PRIMARY KEY']
+        names={'id'}
+        if not columns: raise ValueError('Adicione pelo menos uma coluna além do ID automático.')
+        for column in columns:
+            name=column['name'].strip(); kind=column['type'].upper()
+            if name.casefold() in names: raise ValueError('Existem nomes de coluna repetidos: '+name)
+            if kind not in ('TEXT','INTEGER','REAL','BLOB'): raise ValueError('Tipo inválido.')
+            names.add(name.casefold())
+            definitions.append(self.quote_name(name)+' '+kind+(' NOT NULL' if column.get('required') else ''))
+        with self.visual_connection(ident) as c: c.execute(f'CREATE TABLE {quoted} ({", ".join(definitions)})')
+
+    def add_column(self,ident,table,name,kind):
+        if kind not in ('TEXT','INTEGER','REAL','BLOB'): raise ValueError('Tipo inválido.')
+        with self.visual_connection(ident) as c:
+            self._table_info(c,table)
+            c.execute(f'ALTER TABLE {self.quote_name(table)} ADD COLUMN {self.quote_name(name.strip())} {kind}')
+
+    def drop_table(self,ident,table):
+        with self.visual_connection(ident) as c:
+            self._table_info(c,table)
+            c.execute(f'DROP TABLE {self.quote_name(table)}')
+
+    def browse_table(self,ident,table,sort=None,descending=False,offset=0):
+        with self.visual_connection(ident) as c:
+            info=self._table_info(c,table)
+            names=[col['name'] for col in info['columns']]
+            if sort is not None and sort not in names: raise ValueError('Coluna de ordenação inválida.')
+            identities=info['identity']
+            fields=[self.quote_name(name) for name in identities+names]
+            order=f' ORDER BY {self.quote_name(sort)} '+('DESC' if descending else 'ASC') if sort else ''
+            rows=c.execute(f'SELECT {", ".join(fields)} FROM {self.quote_name(table)}{order} LIMIT 201 OFFSET ?',(max(0,int(offset)),)).fetchall()
+            info.update(rows=[{'key':row[:len(identities)],'values':row[len(identities):]} for row in rows[:200]],more=len(rows)>200)
+            return info
+
+    def _checked_values(self,info,values):
+        editable={col['name'] for col in info['columns'] if not col['hidden']}
+        if not set(values)<=editable: raise ValueError('Coluna desconhecida ou calculada.')
+        return values
+
+    def insert_record(self,ident,table,values):
+        with self.visual_connection(ident) as c:
+            self._checked_values(self._table_info(c,table),values)
+            if values:
+                names=', '.join(self.quote_name(name) for name in values)
+                marks=', '.join('?' for _ in values)
+                c.execute(f'INSERT INTO {self.quote_name(table)} ({names}) VALUES ({marks})',list(values.values()))
+            else: c.execute(f'INSERT INTO {self.quote_name(table)} DEFAULT VALUES')
+
+    def change_record(self,ident,table,record,values=None,delete=False):
+        with self.visual_connection(ident) as c:
+            info=self._table_info(c,table)
+            if not info['identity']: raise ValueError('Esta tabela não tem uma identificação segura para editar linhas.')
+            names=[col['name'] for col in info['columns']]
+            if len(record['key'])!=len(info['identity']) or len(record['values'])!=len(names):
+                raise ValueError('A estrutura mudou. Atualize a tabela.')
+            # Include the original values to reject stale edits from another window/program.
+            where=' AND '.join(self.quote_name(name)+' IS ?' for name in info['identity']+names)
+            arguments=list(record['key'])+list(record['values'])
+            if delete: sql=f'DELETE FROM {self.quote_name(table)} WHERE {where}'
+            else:
+                self._checked_values(info,values)
+                if not values: return
+                assignments=', '.join(self.quote_name(name)+'=?' for name in values)
+                sql=f'UPDATE {self.quote_name(table)} SET {assignments} WHERE {where}'
+                arguments=list(values.values())+arguments
+            result=c.execute(sql,arguments)
+            if result.rowcount!=1: raise ValueError('O registro mudou ou foi removido. Atualize antes de tentar novamente.')

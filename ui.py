@@ -150,3 +150,9 @@ class NameDialog(ctk.CTkToplevel):
     def close(self):
         self.grab_release()
         self.destroy()
+
+class Tabs(ctk.CTkTabview):
+    def _grid_forget_all_tabs(self,exclude_name=None):
+        # CTk 6 delays hiding the old page by 100 ms. Use the current selection
+        # so a quick Visual -> SQL -> Visual switch cannot hide both pages.
+        super()._grid_forget_all_tabs(exclude_name=self.get())
