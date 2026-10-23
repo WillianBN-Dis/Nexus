@@ -1,12 +1,12 @@
 ﻿[Setup]
 AppId=Nexus.DatabaseStudio
 AppName=Nexus
-AppVersion=0.3.0
+AppVersion=0.4.0
 DefaultDirName={localappdata}\Programs\Nexus
 DefaultGroupName=Nexus
 PrivilegesRequired=lowest
 OutputDir=dist
-OutputBaseFilename=Nexus-Setup-0.3.0
+OutputBaseFilename=Nexus-Setup-0.4.0
 Compression=lzma2
 SolidCompression=yes
 UninstallDisplayIcon={app}\Nexus.exe

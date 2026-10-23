@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 import customtkinter as ctk
 from core import Store
-from ui import BG,PANEL,SURFACE,TEXT,MUTED,ACCENT,frame,label,button,brand,load_logo,style_window
+from ui import BG,PANEL,SURFACE,TEXT,MUTED,ACCENT,frame,label,button,brand,load_logo,style_window,center_window,NameDialog
 
 ctk.set_appearance_mode('dark')
 ctk.set_default_color_theme('blue')
@@ -12,6 +12,7 @@ class Nexus(ctk.CTk):
         super().__init__()
         self.title('Nexus  —  Database Studio')
         self.geometry('1280x850')
+        self.withdraw()
         self.minsize(1040,740)
         self.configure(fg_color=BG)
         self.store=store or Store()
@@ -22,6 +23,8 @@ class Nexus(ctk.CTk):
         self.setup_styles()
         self.bind('<Control-Return>',lambda event:self.guard(self.run) if self.store.user else None)
         self.login_screen()
+        self.deiconify()
+        center_window(self,1280,850)
         self.after(250,lambda:style_window(self))
 
     def setup_styles(self):
@@ -45,6 +48,7 @@ class Nexus(ctk.CTk):
     def login_screen(self):
         self.store.user=None
         self.clear()
+        if self.winfo_viewable(): center_window(self,1280,850)
         shell=frame(self.screen)
         shell.pack(fill='both',expand=True,padx=28,pady=28)
         shell.columnconfigure(0,weight=1,uniform='login')
@@ -141,7 +145,7 @@ class Nexus(ctk.CTk):
         footer=frame(sidebar,SURFACE,16)
         footer.pack(side='bottom',fill='x',padx=14,pady=14)
         label(footer,self.username or 'Minha conta',11,TEXT,True).pack(anchor='w',padx=14,pady=(10,0))
-        label(footer,'Conta local  ·  v0.3.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
+        label(footer,'Conta local  ·  v0.4.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
         button(footer,'Sair da conta',self.login_screen).pack(fill='x',padx=10,pady=(0,10))
         self.banks=ttk.Treeview(sidebar,columns=('name','path'),displaycolumns=(),show='tree',selectmode='browse')
         self.banks.column('#0',width=205,stretch=True)
@@ -201,8 +205,19 @@ class Nexus(ctk.CTk):
         self.status.pack(side='right')
         results=frame(main,PANEL,20)
         results.pack(fill='both',expand=True)
-        inner=frame(results,PANEL)
-        inner.pack(fill='both',expand=True,padx=12,pady=12)
+        self.result_tabs=ctk.CTkTabview(results,fg_color=PANEL,corner_radius=16,
+            segmented_button_fg_color=SURFACE,segmented_button_selected_color='#453960',
+            segmented_button_selected_hover_color='#554572',segmented_button_unselected_color=SURFACE,
+            segmented_button_unselected_hover_color='#2b324a',text_color=TEXT,anchor='nw',height=170)
+        self.result_tabs.pack(fill='both',expand=True,padx=10,pady=(4,10))
+        self.result_tabs.add('Resultado')
+        self.result_tabs.add('Tabela')
+        self.result_text=ctk.CTkTextbox(self.result_tabs.tab('Resultado'),fg_color='#101522',
+            text_color='#c1c8f8',font=('Consolas',11),corner_radius=12,wrap='none')
+        self.result_text.pack(fill='both',expand=True,padx=3,pady=3)
+        self.set_result_text('Execute uma consulta para visualizar o resultado.\nOs mesmos dados estarão disponíveis na aba Tabela.')
+        inner=frame(self.result_tabs.tab('Tabela'),PANEL)
+        inner.pack(fill='both',expand=True,padx=3,pady=3)
         self.result=ttk.Treeview(inner,show='headings')
         self.result.grid(row=0,column=0,sticky='nsew')
         sy=ctk.CTkScrollbar(inner,orientation='vertical',command=self.result.yview)
@@ -241,6 +256,7 @@ class Nexus(ctk.CTk):
         self.result['columns']=()
         self.result_empty.place(relx=.5,rely=.5,anchor='center')
         self.status.config(text='Pronto para explorar')
+        self.set_result_text('Execute uma consulta para visualizar o resultado.\nOs mesmos dados estarão disponíveis na aba Tabela.')
 
     def selected(self):
         rows=self.banks.selection()
@@ -257,9 +273,25 @@ class Nexus(ctk.CTk):
         if selected and self.banks.exists(selected[0]): self.banks.selection_set(selected[0])
         self.on_selection()
     def create(self):
-        name=simpledialog.askstring('Novo banco','Nome do banco:',parent=self)
-        if name:
-            ident=self.store.create(name); self.search_var.set(''); self.refresh(); self.banks.selection_set(ident); self.on_selection()
+        if getattr(self,'create_dialog',None) is not None and self.create_dialog.winfo_exists():
+            self.create_dialog.lift()
+            self.create_dialog.name.focus_set()
+            return self.create_dialog
+        def submit(name):
+            ident=self.store.create(name)
+            self.search_var.set('')
+            self.refresh()
+            self.banks.selection_set(ident)
+            self.banks.see(ident)
+            self.on_selection()
+        self.create_dialog=NameDialog(self,submit)
+        return self.create_dialog
+
+    def set_result_text(self,text):
+        self.result_text.configure(state='normal')
+        self.result_text.delete('1.0','end')
+        self.result_text.insert('1.0',text)
+        self.result_text.configure(state='disabled')
     def rename(self):
         ident=self.selected(); name=simpledialog.askstring('Renomear','Novo nome:',parent=self,initialvalue=self.store.get(ident)[1])
         if name: self.store.rename(ident,name); self.refresh()
@@ -275,7 +307,27 @@ class Nexus(ctk.CTk):
         ident=self.selected(); sql=self.sql.get('1.0','end').strip()
         if not sql: return
         if not sql.lstrip().upper().startswith(('SELECT','EXPLAIN')) and not messagebox.askyesno('Executar SQL','Esta instrução pode alterar ou excluir dados. Executar?'): return
-        columns,rows,truncated=self.store.execute(ident,sql)
+        try:
+            columns,rows,truncated=self.store.execute(ident,sql)
+        except Exception as error:
+            self.result.delete(*self.result.get_children())
+            self.result['columns']=()
+            self.result_empty.place(relx=.5,rely=.5,anchor='center')
+            self.set_result_text('Falha ao executar a consulta.\n\n'+str(error))
+            self.status.config(text='Consulta não concluída')
+            self.result_tabs.set('Resultado')
+            raise
+        import json
+        output=[f'Banco: {self.store.get(ident)[1]}',f'{len(rows)} linha(s) retornada(s).']
+        if truncated: output.append('Exibição limitada às primeiras 1.000 linhas.')
+        output.append('')
+        for index,row in enumerate(rows,1):
+            output.append(f'[{index}]')
+            for column,value in zip(columns,row):
+                output.append(f'{column}: {json.dumps(value,ensure_ascii=False,default=str)}')
+            output.append('')
+        if not rows: output.append('A consulta não retornou linhas.')
+        self.set_result_text('\n'.join(output))
         self.result_empty.place_forget()
         self.result.delete(*self.result.get_children()); keys=[str(i) for i in range(len(columns))]; self.result['columns']=keys
         for key,title in zip(keys,columns): self.result.heading(key,text=title); self.result.column(key,width=180,stretch=False)
