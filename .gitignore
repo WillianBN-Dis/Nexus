@@ -7,3 +7,6 @@ dist/
 .env
 
 *-output.log
+
+dist-*/
+build-*/

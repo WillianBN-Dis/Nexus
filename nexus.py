@@ -12,7 +12,6 @@ class Nexus(ctk.CTk):
         super().__init__()
         self.title('Nexus  —  Database Studio')
         self.geometry('1280x850')
-        self.withdraw()
         self.minsize(1040,740)
         self.configure(fg_color=BG)
         self.store=store or Store()
@@ -23,9 +22,19 @@ class Nexus(ctk.CTk):
         self.setup_styles()
         self.bind('<Control-Return>',lambda event:self.guard(self.run) if self.store.user else None)
         self.login_screen()
-        self.deiconify()
-        center_window(self,1280,850)
-        self.after(250,lambda:style_window(self))
+        self.after(150,self.finish_startup)
+
+    def finish_startup(self):
+        # Position only after Tk has mapped the native window.
+        try:
+            center_window(self)
+            style_window(self)
+        except Exception:
+            import logging
+            logging.exception('Falha ao personalizar janela; mantendo aparência padrão')
+        finally:
+            self.deiconify()
+            self.lift()
 
     def setup_styles(self):
         style=ttk.Style(self)
@@ -48,7 +57,7 @@ class Nexus(ctk.CTk):
     def login_screen(self):
         self.store.user=None
         self.clear()
-        if self.winfo_viewable(): center_window(self,1280,850)
+        if self.winfo_viewable(): self.after_idle(lambda:center_window(self))
         shell=frame(self.screen)
         shell.pack(fill='both',expand=True,padx=28,pady=28)
         shell.columnconfigure(0,weight=1,uniform='login')
@@ -145,7 +154,7 @@ class Nexus(ctk.CTk):
         footer=frame(sidebar,SURFACE,16)
         footer.pack(side='bottom',fill='x',padx=14,pady=14)
         label(footer,self.username or 'Minha conta',11,TEXT,True).pack(anchor='w',padx=14,pady=(10,0))
-        label(footer,'Conta local  ·  v0.4.0',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
+        label(footer,'Conta local  ·  v0.4.1',9,MUTED).pack(anchor='w',padx=14,pady=(0,8))
         button(footer,'Sair da conta',self.login_screen).pack(fill='x',padx=10,pady=(0,10))
         self.banks=ttk.Treeview(sidebar,columns=('name','path'),displaycolumns=(),show='tree',selectmode='browse')
         self.banks.column('#0',width=205,stretch=True)
@@ -334,4 +343,33 @@ class Nexus(ctk.CTk):
         for index,row in enumerate(rows): self.result.insert('','end',values=['NULL' if v is None else str(v) for v in row],tags=('alternate',) if index%2 else ())
         self.status.config(text=f'{len(rows)} linha(s)'+(' • limitado a 1.000 resultados' if truncated else ' • concluído'))
 
-if __name__=='__main__': Nexus().mainloop()
+def main():
+    import os,sys,logging
+    from pathlib import Path
+    folder=Path(os.getenv('LOCALAPPDATA',Path.home()))/'Nexus'
+    folder.mkdir(parents=True,exist_ok=True)
+    logging.basicConfig(filename=folder/'nexus.log',level=logging.INFO,
+                        format='%(asctime)s %(levelname)s %(message)s',encoding='utf-8')
+    try:
+        logging.info('Nexus 0.4.1: iniciando')
+        app=Nexus()
+        def callback_error(exc_type,value,tb):
+            logging.error('Erro na interface',exc_info=(exc_type,value,tb))
+            messagebox.showerror('Nexus','Ocorreu um erro. Consulte '+str(folder/'nexus.log'),parent=app)
+        app.report_callback_exception=callback_error
+        def ready():
+            logging.info('Janela pronta: visible=%s geometry=%s',app.winfo_viewable(),app.geometry())
+            if '--startup-check' in sys.argv:
+                if not app.winfo_viewable():
+                    app.destroy()
+                    raise RuntimeError('Janela não visível no teste de abertura')
+                app.destroy()
+        app.after(2000,ready)
+        app.mainloop()
+        logging.info('Nexus encerrado')
+    except Exception:
+        logging.exception('Falha na inicialização')
+        messagebox.showerror('Nexus','Não foi possível iniciar. Detalhes em '+str(folder/'nexus.log'))
+        raise
+
+if __name__=='__main__': main()

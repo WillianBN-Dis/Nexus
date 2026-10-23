@@ -75,36 +75,25 @@ def style_window(window):
         pass  # Older Windows versions retain their supported native appearance.
 
 def center_window(window,width=None,height=None,parent=None):
-    """Center a restored window within its monitor's usable desktop area."""
+    """Position an already mapped window without nested event loops or native calls."""
     if width is not None:
-        window.state('normal')
         window.geometry(f'{width}x{height}')
-    window.update_idletasks()
-    left,top=0,0
-    right,bottom=window.winfo_screenwidth(),window.winfo_screenheight()
-    if sys.platform=='win32':
-        try:
-            from ctypes import wintypes
-            class MonitorInfo(ctypes.Structure):
-                _fields_=[('size',wintypes.DWORD),('monitor',wintypes.RECT),('work',wintypes.RECT),('flags',wintypes.DWORD)]
-            user=ctypes.windll.user32
-            user.MonitorFromWindow.argtypes=[wintypes.HWND,wintypes.DWORD]
-            user.MonitorFromWindow.restype=wintypes.HANDLE
-            user.GetMonitorInfoW.argtypes=[wintypes.HANDLE,ctypes.POINTER(MonitorInfo)]
-            info=MonitorInfo(); info.size=ctypes.sizeof(info)
-            handle=user.MonitorFromWindow((parent or window).winfo_id(),2)
-            if user.GetMonitorInfoW(handle,ctypes.byref(info)):
-                left,top,right,bottom=info.work.left,info.work.top,info.work.right,info.work.bottom
-        except (OSError,AttributeError): pass
-    actual_width,actual_height=window.winfo_width(),window.winfo_height()
-    if parent:
-        x=parent.winfo_rootx()+(parent.winfo_width()-actual_width)//2
-        y=parent.winfo_rooty()+(parent.winfo_height()-actual_height)//2
+        window.after_idle(lambda:center_window(window,parent=parent))
+        return
+    if not window.winfo_exists(): return
+    width,height=window.winfo_width(),window.winfo_height()
+    if width<=1 or height<=1:
+        window.after(100,lambda:center_window(window,parent=parent))
+        return
+    screen_width,screen_height=window.winfo_screenwidth(),window.winfo_screenheight()
+    if parent is not None:
+        x=parent.winfo_rootx()+(parent.winfo_width()-width)//2
+        y=parent.winfo_rooty()+(parent.winfo_height()-height)//2
     else:
-        x=left+(right-left-actual_width)//2
-        y=top+(bottom-top-actual_height)//2
-    x=max(left,min(x,right-actual_width))
-    y=max(top+30,min(y,bottom-actual_height-12))
+        x=(screen_width-width)//2
+        y=(screen_height-height)//2-16
+    x=max(0,min(x,max(0,screen_width-width)))
+    y=max(30,min(y,max(30,screen_height-height-48)))
     window.geometry(f'+{x}+{y}')
 
 class NameDialog(ctk.CTkToplevel):
@@ -139,7 +128,7 @@ class NameDialog(ctk.CTkToplevel):
         self.protocol('WM_DELETE_WINDOW',self.close)
         self.geometry('540x500')
         self.deiconify()
-        center_window(self,parent=parent)
+        self.after(100,lambda:center_window(self,parent=parent))
         self.grab_set()
         self.after(250,lambda:style_window(self) if self.winfo_exists() else None)
         self.after(100,self.name.focus_set)
