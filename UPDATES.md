@@ -17,8 +17,8 @@ O nome e o endereço permanecem os mesmos. O conteúdo do instalador é gerado n
 Depois de implementar e revisar as mudanças, atualize `CHANGELOG.md` e publique o código em `main`. Em seguida, crie uma tag estável, com versão maior que a anterior:
 
 ```powershell
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.2
+git push origin v1.1.2
 ```
 
 O workflow `.github/workflows/release.yml` usa a versão da tag para compilar e empacotar; não é necessário editar números em vários arquivos. Ele roda os testes do núcleo, das janelas WPF e do atualizador, cria a release como rascunho com todos os arquivos e só depois a publica como a mais recente. Um push de código sem uma tag não lança atualização.
@@ -30,10 +30,10 @@ Não reutilize uma versão já publicada. Em caso de correção, publique uma ve
 Requisitos para desenvolver: SDK .NET 10 e Inno Setup 6. O `vpk` 1.2.161 é instalado automaticamente em `native/artifacts/tools`, fora do Git.
 
 ```powershell
-./native/build.ps1 -Version 1.0.1
+./native/build.ps1 -Version 1.1.2
 ```
 
-Saída: `dist/releases/1.0.1/`. Para publicação manual, envie à mesma release:
+Saída: `dist/releases/1.1.2/`. Para publicação manual, envie à mesma release:
 
 - `Nexus-Setup.exe`
 - `releases.win.json`

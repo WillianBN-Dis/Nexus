@@ -10,6 +10,7 @@ public partial class MainWindow
 {
     internal LocalApiHost? ApiHost;
     private Forms.NotifyIcon? tray;
+    private TrayMenu? trayMenu;
     private bool exiting,trayHintShown;
     private EventWaitHandle? openSignal;
     private RegisteredWaitHandle? openWait;
@@ -20,27 +21,36 @@ public partial class MainWindow
         var resource=Application.GetResourceStream(new Uri("pack://application:,,,/Assets/nexus.ico"));
         using(var stream=resource.Stream)
         using(var icon=new System.Drawing.Icon(stream))tray=new Forms.NotifyIcon{Icon=(System.Drawing.Icon)icon.Clone(),Text="Nexus · Em segundo plano",Visible=true};
-        var menu=new Forms.ContextMenuStrip{BackColor=System.Drawing.Color.FromArgb(21,26,43),ForeColor=System.Drawing.Color.White};
-        menu.Items.Add("Abrir Nexus",null,(s,e)=>Dispatcher.Invoke(ShowFromTray));
-        menu.Items.Add("Desligar API",null,async(s,e)=>
+        trayMenu=new TrayMenu();
+        trayMenu.OpenItem.Click+=(s,e)=>ShowFromTray();
+        trayMenu.StopApiItem.Click+=async(s,e)=>
         {
             try{await ApiHost.ConfigureAsync(ApiHost.Settings with{Enabled=false});UpdateTrayStatus();tray.ShowBalloonTip(3000,"Nexus","API desligada.",Forms.ToolTipIcon.Info);}catch{ShowFromTray();}
-        });
-        menu.Items.Add("Atualizar e reiniciar",null,(s,e)=>{ShowFromTray();RestartUpdate_Click(this,new());});
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("Encerrar Nexus e API",null,async(s,e)=>await ExitApplication());
-        tray.ContextMenuStrip=menu;tray.DoubleClick+=(s,e)=>Dispatcher.Invoke(ShowFromTray);tray.BalloonTipClicked+=(s,e)=>Dispatcher.Invoke(ShowFromTray);
+        };
+        trayMenu.UpdateItem.Click+=(s,e)=>{ShowFromTray();RestartUpdate_Click(this,new());};
+        trayMenu.ExitItem.Click+=async(s,e)=>await ExitApplication();
+        tray.MouseUp+=(s,e)=>{if(e.Button==Forms.MouseButtons.Right)Dispatcher.BeginInvoke(OpenTrayMenu);};
+        tray.DoubleClick+=(s,e)=>Dispatcher.Invoke(ShowFromTray);tray.BalloonTipClicked+=(s,e)=>Dispatcher.Invoke(ShowFromTray);
         openSignal=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Nexus.Open"+(dataRoot is null?"":".test."+Guid.NewGuid().ToString("N")));
         openWait=ThreadPool.RegisterWaitForSingleObject(openSignal,(s,t)=>Dispatcher.BeginInvoke(ShowFromTray),null,Timeout.Infinite,false);
         StateChanged+=(s,e)=>{if(WindowState==WindowState.Minimized)HideToTray();};
         Application.Current.SessionEnding+=(s,e)=>exiting=true;
-        Closed+=(s,e)=>{openWait?.Unregister(null);openSignal?.Dispose();tray?.Icon?.Dispose();tray?.Dispose();};
+        Closed+=(s,e)=>{if(trayMenu is not null)trayMenu.IsOpen=false;openWait?.Unregister(null);openSignal?.Dispose();tray?.Icon?.Dispose();tray?.Dispose();};
         if(background)Hide();else Show();
         try{await ApiHost.RestoreAsync();UpdateTrayStatus();}
         catch{tray.ShowBalloonTip(6000,"Nexus · API","Não foi possível iniciar a API. Abra API e rede para conferir endereço e porta.",Forms.ToolTipIcon.Warning);}
     }
     internal void ShowFromTray()
-    {Show();if(WindowState==WindowState.Minimized)WindowState=WindowState.Normal;Activate();}
+    {if(trayMenu is not null)trayMenu.IsOpen=false;Show();if(WindowState==WindowState.Minimized)WindowState=WindowState.Normal;Activate();}
+    internal void OpenTrayMenu()
+    {
+        if(trayMenu is null)return;
+        trayMenu.ApiStatus=ApiHost?.Running==true?"● API em execução":"● API desligada";
+        trayMenu.StatusBrush=new System.Windows.Media.SolidColorBrush(ApiHost?.Running==true?System.Windows.Media.Color.FromRgb(158,227,199):System.Windows.Media.Color.FromRgb(155,166,195));
+        trayMenu.StopApiItem.IsEnabled=ApiHost?.Running==true;
+        trayMenu.UpdateItem.IsEnabled=updater?.UpdatePendingRestart is not null&&!busy&&OwnedWindows.Count==0;
+        trayMenu.IsOpen=false;trayMenu.IsOpen=true;
+    }
     internal void HideToTray()
     {
         Hide();if(trayHintShown||tray is null)return;trayHintShown=true;

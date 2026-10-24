@@ -1,0 +1,24 @@
+<ContextMenu x:Class="Nexus.Wpf.TrayMenu" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Width="292" Background="Transparent" BorderThickness="0" Padding="8" HasDropShadow="False" FontFamily="Segoe UI" FontSize="14" Placement="MousePoint" FocusVisualStyle="{x:Null}" UseLayoutRounding="True" SnapsToDevicePixels="True">
+ <ContextMenu.Resources>
+  <Style TargetType="MenuItem">
+   <Setter Property="Foreground" Value="#F1F0FB"/><Setter Property="Padding" Value="12,11"/><Setter Property="Margin" Value="0,2"/><Setter Property="MinHeight" Value="44"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="MenuItem"><Border x:Name="ItemSurface" Background="Transparent" CornerRadius="10" Padding="{TemplateBinding Padding}"><ContentPresenter ContentSource="Header" HorizontalAlignment="Stretch" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemSurface" Property="Background" Value="#2D2844"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="ItemSurface" Property="Opacity" Value="0.4"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{Binding Foreground,RelativeSource={RelativeSource AncestorType=MenuItem}}"/><Setter Property="FontSize" Value="14"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+  <Style x:Key="TraySeparator" TargetType="Separator"><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Separator"><Border Height="1" Background="#303047" Margin="10,9"/></ControlTemplate></Setter.Value></Setter></Style>
+ </ContextMenu.Resources>
+ <ContextMenu.Template><ControlTemplate TargetType="ContextMenu">
+  <Border Background="#151A2B" BorderBrush="#38344E" BorderThickness="1" CornerRadius="18" Padding="8" Margin="8">
+   <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="14" ShadowDepth="3" Opacity="0.28"/></Border.Effect>
+   <StackPanel>
+    <Grid Margin="10,9,10,13"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition/></Grid.ColumnDefinitions><Image Source="pack://application:,,,/Assets/nexus.png" Width="30" Height="30" VerticalAlignment="Center" HorizontalAlignment="Left"/><StackPanel Grid.Column="1"><TextBlock Text="nexus" FontSize="20" FontWeight="SemiBold" Foreground="#F1F0FB"/><TextBlock Text="{Binding ApiStatus,RelativeSource={RelativeSource TemplatedParent}}" FontSize="11" Foreground="{Binding StatusBrush,RelativeSource={RelativeSource TemplatedParent}}" Margin="0,3,0,0"/></StackPanel></Grid>
+    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+   </StackPanel>
+  </Border>
+ </ControlTemplate></ContextMenu.Template>
+ <MenuItem x:Name="OpenItem" AutomationProperties.Name="Abrir Nexus"><MenuItem.Header><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="&#xE8A7;" FontFamily="Segoe MDL2 Assets" Foreground="#B5A2FF"/><TextBlock Grid.Column="1" Text="Abrir Nexus" FontWeight="SemiBold"/></Grid></MenuItem.Header></MenuItem>
+ <MenuItem x:Name="StopApiItem" AutomationProperties.Name="Desligar API"><MenuItem.Header><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets"/><TextBlock Grid.Column="1" Text="Desligar API"/></Grid></MenuItem.Header></MenuItem>
+ <MenuItem x:Name="UpdateItem" AutomationProperties.Name="Atualizar e reiniciar"><MenuItem.Header><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets"/><TextBlock Grid.Column="1" Text="Atualizar e reiniciar"/></Grid></MenuItem.Header></MenuItem>
+ <Separator Style="{StaticResource TraySeparator}"/>
+ <MenuItem x:Name="ExitItem" Foreground="#FFB0C0" AutomationProperties.Name="Encerrar Nexus e API"><MenuItem.Header><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets"/><TextBlock Grid.Column="1" Text="Encerrar Nexus e API"/></Grid></MenuItem.Header></MenuItem>
+</ContextMenu>

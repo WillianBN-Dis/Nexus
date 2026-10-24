@@ -1,5 +1,5 @@
 #ifndef NexusVersion
-  #define NexusVersion "1.1.0"
+  #define NexusVersion "1.1.1"
 #endif
 #ifndef NexusPayload
   #error "Use native/build.ps1 para preparar o pacote do instalador."

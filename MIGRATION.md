@@ -61,3 +61,7 @@ Validação local: 33 testes de núcleo, 37 verificações HTTP, testes WPF incl
 ## Release 1.1.0 — publicada e validada
 Publicada em https://github.com/WillianBN-Dis/Nexus/releases/tag/v1.1.0, tag aa6f760. Workflow 40110552144 concluído com sucesso: 33 verificações do núcleo, 37 HTTP/segurança/logs, interface WPF e 12 de atualização com preservação de chaves de API.
 Verificação pública posterior: link fixo do instalador e SHA256 conferidos; teste contra GitHub Releases passou com 14 verificações, incluindo download remoto. Instalador público salvo em dist/Nexus-Setup.exe. A API começa desativada, para configuração pelo usuário em API e rede. Nenhuma porta LAN real, regra de Firewall ou inicialização automática deste PC foi ativada pelos testes. Trabalho concluído sem esgotar a cota; não foi necessário agendar continuação.
+
+## Ajuste 1.1.1 — menu da bandeja
+Menu padrão WinForms substituído por ContextMenu WPF no tema do Nexus: cabeçalho com ícone e status da API, cantos arredondados, ícones por ação, hover violeta, separador discreto e ação de encerrar destacada. Sem trilho branco/destaque azul do Windows. As ações indisponíveis ficam desabilitadas.
+Teste WPF real confirmou abertura com janela principal oculta e estado correto dos itens; screenshot nativo em native/qa/08-menu-bandeja.png inspecionado. Preservados duplo clique para restaurar, desligamento da API, atualização e encerramento. Empacotamento 1.1.1 em andamento.

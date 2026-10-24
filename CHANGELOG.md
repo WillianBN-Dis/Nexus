@@ -1,5 +1,11 @@
 # Histórico do Nexus
 
+## 1.1.1
+
+- Menu da bandeja redesenhado em WPF, com identidade visual do Nexus, cantos arredondados, ícones, status da API e hover violeta.
+- Removidos o trilho branco e o destaque azul do menu padrão; ações indisponíveis ficam desabilitadas.
+- Menu abre com a janela oculta, aceita navegação de teclado e mantém as ações existentes.
+
 ## 1.1.0
 
 - API de rede local com seleção de bancos, chaves por conta, permissões de leitura/escrita e renovação/revogação.

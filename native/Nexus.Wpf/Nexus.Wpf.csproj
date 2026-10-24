@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>WinExe</OutputType><AssemblyName>Nexus</AssemblyName><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><AllowUnsafeBlocks>true</AllowUnsafeBlocks><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><ApplicationIcon>../../assets/nexus.ico</ApplicationIcon><Version>1.0.0</Version><InformationalVersion>1.0.0</InformationalVersion><StartupObject>Nexus.Wpf.Program</StartupObject></PropertyGroup>
-  <PropertyGroup><UseWindowsForms>true</UseWindowsForms><Version>1.1.0</Version><InformationalVersion>1.1.0</InformationalVersion></PropertyGroup>
+  <PropertyGroup><UseWindowsForms>true</UseWindowsForms><Version>1.1.1</Version><InformationalVersion>1.1.1</InformationalVersion></PropertyGroup>
   <ItemGroup><Using Remove="System.Windows.Forms"/><Using Remove="System.Drawing"/><ProjectReference Include="../Nexus.Api/Nexus.Api.csproj"/><ProjectReference Include="../Nexus.Core/Nexus.Core.csproj" /><Resource Include="../../assets/nexus.png" Link="Assets/nexus.png" /><Resource Include="../../assets/nexus.ico" Link="Assets/nexus.ico"/></ItemGroup>
   <ItemGroup>
     <PackageReference Include="Velopack" Version="1.2.161" />

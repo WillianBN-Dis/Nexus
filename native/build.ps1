@@ -1,4 +1,4 @@
-param([switch]$SkipTests, [string]$Version = '1.1.0')
+param([switch]$SkipTests, [string]$Version = '1.1.1')
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Use uma versão estável, por exemplo 1.0.1.' }
 $nexusRoot = Split-Path $PSScriptRoot -Parent

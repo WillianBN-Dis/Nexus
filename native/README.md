@@ -1,11 +1,11 @@
 # Nexus para Windows — C# / WPF
 
-Implementação ativa da versão **1.1.0**. Código Python legado preservado na raiz.
+Implementação ativa da versão **1.1.1**. Código Python legado preservado na raiz.
 
 ## Executar
 
 - Instalador: `../dist/Nexus-Setup.exe`.
-- Arquivos da release: `../dist/releases/1.1.0/`.
+- Arquivos da release: `../dist/releases/1.1.1/`.
 - Executável isolado para desenvolvimento: `artifacts/publish/Nexus.exe`; para habilitar o atualizador, use o instalador com seu lançador, pasta current e Update.exe.
 - Windows x64, runtime .NET incluído. Sem Python ou SDK no computador de destino.
 - Atalho na área de trabalho opcional e atualização da instalação anterior com o mesmo AppId.
@@ -15,7 +15,7 @@ Implementação ativa da versão **1.1.0**. Código Python legado preservado na 
 SDK .NET 10 e Inno Setup 6. O script localiza dotnet no PATH ou na instalação privada `%LOCALAPPDATA%/NexusDev/dotnet`.
 
 ```powershell
-./native/build.ps1 -Version 1.1.0
+./native/build.ps1 -Version 1.1.1
 ```
 
 O build executa testes do núcleo e da interface WPF, publica o app autocontido, gera os pacotes Velopack 1.2.161, testa uma atualização real em diretório temporário e compila o instalador. `-SkipTests` serve apenas para reempacotamento após validação.
@@ -24,7 +24,7 @@ O build executa testes do núcleo e da interface WPF, publica o app autocontido,
 dotnet run --project native/Nexus.Smoke/Nexus.Smoke.csproj
 dotnet build native/Nexus.Wpf/Nexus.Wpf.csproj
 dotnet native/Nexus.Wpf/bin/Debug/net10.0-windows/Nexus.dll --ui-test
-dotnet run --project native/Nexus.UpdateSmoke/Nexus.UpdateSmoke.csproj -- dist/releases/1.1.0 1.1.0
+dotnet run --project native/Nexus.UpdateSmoke/Nexus.UpdateSmoke.csproj -- dist/releases/1.1.1 1.1.1
 ```
 
 Testes usam dados sintéticos, sem contas ou bancos reais. O teste WPF salva imagens em `native/qa`; `--startup-check` abre o app e encerra em três segundos.

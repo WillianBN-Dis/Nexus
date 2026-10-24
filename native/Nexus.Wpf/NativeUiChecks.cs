@@ -26,6 +26,13 @@ internal static class NativeUiChecks
             await window.ApiHost!.ConfigureAsync(new Nexus.Api.ApiSettings(true,"127.0.0.1",port));
             window.Close();
             AssertBackground(!window.IsVisible,"fechar não ocultou a janela na bandeja");
+            window.OpenTrayMenu();await Task.Delay(200);
+            AssertBackground(window.TrayMenuForTest is not null&&window.TrayMenuForTest.IsOpen,"menu não abriu com a janela oculta");
+            var menu=window.TrayMenuForTest!;menu.UpdateLayout();
+            AssertBackground(menu.StopApiItem.IsEnabled&&!menu.UpdateItem.IsEnabled,"ações da bandeja não refletem o estado atual");
+            var menuImage=new RenderTargetBitmap((int)Math.Ceiling(menu.ActualWidth),(int)Math.Ceiling(menu.ActualHeight),96,96,PixelFormats.Pbgra32);menuImage.Render(menu);
+            var menuEncoder=new PngBitmapEncoder();menuEncoder.Frames.Add(BitmapFrame.Create(menuImage));using(var menuFile=System.IO.File.Create(System.IO.Path.Combine(output,"08-menu-bandeja.png")))menuEncoder.Save(menuFile);
+            menu.IsOpen=false;
             using var client=new System.Net.Http.HttpClient();client.DefaultRequestHeaders.Authorization=new("Bearer",token);
             using var response=await client.GetAsync(window.ApiHost.Address+"/api/bancos");
             AssertBackground(response.IsSuccessStatusCode,"API não continuou atendendo com a janela fechada");
@@ -47,6 +54,7 @@ internal static class NativeUiChecks
 public partial class MainWindow
 {
     internal void AllowTestExit()=>exiting=true;
+    internal TrayMenu? TrayMenuForTest=>trayMenu;
     private static void AssertUi(bool condition,string message){if(!condition)throw new InvalidOperationException("UI check: "+message);}
     private async Task Settle()
     {await Dispatcher.InvokeAsync(()=>UpdateLayout(),DispatcherPriority.ApplicationIdle);await Task.Delay(200);}
