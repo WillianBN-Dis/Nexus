@@ -70,3 +70,4 @@ Release 1.1.1 publicada: https://github.com/WillianBN-Dis/Nexus/releases/tag/v1.
 ## Ajuste 1.1.2 — ícone refinado
 Ícone editado com image_gen preservando o N azul/violeta; fundo azul-escuro sem contorno luminoso. PNG original gerado preservado; ICO reempacotado em 16, 20, 24, 32, 40, 48, 64, 96, 128 e 256 px com LANCZOS. Prompt em assets/nexus-icon.md.
 Janela WPF passa a usar ICO com múltiplas resoluções; bandeja seleciona SmallIconSize do Windows e imagens WPF usam HighQuality. Verificações dos frames, testes do núcleo/API/atualizador e WPF passaram. Aparência inspecionada em native/qa/08-menu-bandeja.png. Instalador local 1.1.2 compilado; publicação em preparação.
+Release 1.1.2 publicada em https://github.com/WillianBN-Dis/Nexus/releases/tag/v1.1.2. Workflow 40129295201 passou; teste do executável autocontido também passou. Instalador, SHA256 e feed público verificados. Artefatos finais: assets/nexus.png, assets/nexus.ico e dist/Nexus-Setup.exe.
