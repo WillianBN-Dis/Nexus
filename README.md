@@ -1,6 +1,6 @@
 # Nexus — C# / WPF
 
-A implementação ativa nesta branch é a prévia **0.6.0-wpf.2** em `native/`. Consulte [o guia WPF](native/README.md) para executar, compilar e testar. O instalador fica em `dist/Nexus-Setup-0.6.0-wpf.2.exe`. Os fontes Python abaixo permanecem preservados como histórico da migração.
+A implementação ativa nesta branch é a prévia **0.6.0-wpf.3** em `native/`. Consulte [o guia WPF](native/README.md) para executar, compilar e testar. O instalador fica em `dist/Nexus-Setup-0.6.0-wpf.3.exe`. Os fontes Python abaixo permanecem preservados como histórico da migração.
 
 ---
 

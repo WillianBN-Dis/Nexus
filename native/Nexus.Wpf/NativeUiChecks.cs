@@ -18,7 +18,7 @@ internal static class NativeUiChecks
         {
             var window=new MainWindow(data);app.MainWindow=window;window.Show();
             await window.ExerciseAsync(output);
-            System.IO.File.WriteAllText(System.IO.Path.Combine(output,"ui-result.txt"),"PASS: WPF real. Login, tamanhos, cadastro, tabela, validação, registro, edição, coluna, SQL, alternância, cancelamento, responsividade e recarga sem limpar a grade/desabilitar a navegação.\n");
+            System.IO.File.WriteAllText(System.IO.Path.Combine(output,"ui-result.txt"),"PASS: WPF real. Login, tamanhos, cadastro, tabela, validação, registro, edição, coluna, SQL, alternância, cancelamento, responsividade, recarga estável, status no header, confirmação temática, DELETAR e layout SQL sem arraste/tooltip.\n");
             window.Close();app.Shutdown(0);
         }
         catch(Exception error)
@@ -55,6 +55,14 @@ public partial class MainWindow
         };
         AssertUi(dialog.ShowDialog()==true||failure is not null,"formulário foi cancelado inesperadamente");
         if(failure is not null)throw failure;await Settle();
+    }
+    private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
+    {
+        for(int n=0;n<VisualTreeHelper.GetChildrenCount(root);n++)
+        {
+            var child=VisualTreeHelper.GetChild(root,n);yield return child;
+            foreach(var descendant in Descendants(child))yield return descendant;
+        }
     }
     internal async Task ExerciseAsync(string output)
     {
@@ -130,10 +138,40 @@ public partial class MainWindow
             AssertUi(TableData.IsVisible&&page?.Rows.Count==2,"a tabela não reapareceu após criar/excluir");
         }
         finally{sourceDescriptor.RemoveValueChanged(TableData,sourceChanged);CompositionTarget.Rendering-=frame;}
+        AssertUi(Status.Parent==StatusBadge,"status fora do cabeçalho");
+        AssertUi(MoveDatabaseButton.Content.ToString()=="Mover de Pasta","texto de mover");
+        var bodyWidth=new System.Windows.Media.FormattedText(CreateDatabaseButton.Content.ToString(),System.Globalization.CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,
+            new Typeface(CreateDatabaseButton.FontFamily,CreateDatabaseButton.FontStyle,CreateDatabaseButton.FontWeight,CreateDatabaseButton.FontStretch),CreateDatabaseButton.FontSize,Brushes.White,VisualTreeHelper.GetDpi(this).PixelsPerDip).Width;
+        AssertUi(CreateDatabaseButton.ActualWidth>=bodyWidth+CreateDatabaseButton.Padding.Left+CreateDatabaseButton.Padding.Right,"texto do botão novo banco cortado");
+        await Task.Run(()=>store!.InsertRecord(id,table!,new Dictionary<string,object?>{{"nome","Excluir fixture"},{"idade",99L}}));
+        await Run("Teste",ReloadPage);
+        var removable=page!.Rows.Single(r=>Equals(r.Values[1],"Excluir fixture"));
+        var confirm=new ConfirmationDialog(this,"Excluir registro","Remover o registro selecionado?",()=>Task.Run(()=>store!.ChangeRecord(id,table!,removable,delete:true)));
+        await Modal(confirm,()=>{confirm.SubmitForTest();return Task.CompletedTask;});
+        await Run("Teste",ReloadPage);AssertUi(page!.Rows.Count==2,"popup de exclusão");
+        foreach(var word in new[]{"DELETAR","deletar"})
+        {
+            bool accepted=false;
+            var deletion=new TextPromptDialog(this,"Confirmação","Digite DELETAR para confirmar.","",value=>{accepted=true;return Task.CompletedTask;},"DELETAR",ignoreCase:true);
+            await Modal(deletion,async()=>
+            {
+                deletion.Input.Text="errado";deletion.SubmitForTest();while(deletion.Saving)await Task.Delay(20);
+                AssertUi(!accepted&&deletion.IsVisible,"confirmação incorreta aceita");
+                deletion.Input.Text=word;deletion.SubmitForTest();
+            });
+            AssertUi(accepted,"confirmação DELETAR sem diferenciar maiúsculas");
+        }
         Snapshot(output,"04-visual");
         WindowState=WindowState.Maximized;await Settle();Snapshot(output,"05-visual-maximizado");WindowState=WindowState.Normal;await Settle();
         WorkspaceTabs.SelectedItem=SqlTab;Sql.Text="SELECT nome, idade, cidade FROM clientes ORDER BY idade DESC;";Query_Click(this,new());await Idle();
         AssertUi(QueryData.ItemsSource is DataView view&&view.Count==2,"resultado SQL");Snapshot(output,"06-sql");
+        AssertUi(Sql.ToolTip is null,"tooltip do SQL ainda aparece");
+        AssertUi(ExecuteButton.ActualHeight<=48,"botão executar esticado");
+        AssertUi(!Descendants(Root).OfType<GridSplitter>().Any(),"editor SQL permite arraste manual");
+        Sql.Text="SELECT * FROM tabela_inexistente";Query_Click(this,new());await Idle();
+        AssertUi(((SolidColorBrush)Status.Foreground).Color==Color.FromRgb(255,173,185),"erro não ficou vermelho no cabeçalho");
+        await Run("Teste",ReloadPage);
+        AssertUi(((SolidColorBrush)Status.Foreground).Color==Color.FromRgb(158,227,199),"sucesso não ficou verde no cabeçalho");
         int ticks=0;var heartbeat=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(50)};heartbeat.Tick+=(s,e)=>ticks++;heartbeat.Start();
         Sql.Text="WITH RECURSIVE seq(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM seq WHERE n<1000000000) SELECT SUM(n) FROM seq";
         Query_Click(this,new());await Task.Delay(300);CancelQuery_Click(this,new());await Idle();heartbeat.Stop();
@@ -144,6 +182,12 @@ public partial class MainWindow
         foreach(var size in new[]{(1040d,740d),(1920d,1080d),(1280d,880d)})
         {
             Width=size.Item1;Height=size.Item2;await Settle();
+            foreach(var tab in new[]{VisualTab,SqlTab}.Concat(QueryTabs.Items.Cast<TabItem>()))
+            {
+                var header=new FormattedText(tab.Header.ToString(),System.Globalization.CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,
+                    new Typeface(tab.FontFamily,tab.FontStyle,tab.FontWeight,tab.FontStretch),tab.FontSize,Brushes.White,VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                if(tab.IsVisible)AssertUi(tab.ActualWidth+1>=header.Width+tab.Padding.Left+tab.Padding.Right,"cabeçalho cortado: "+tab.Header);
+            }
             AssertUi(TableData.ActualHeight>50&&NextPage.IsVisible,"layout do workspace: "+TableData.ActualHeight+" visible="+NextPage.IsVisible+" mode="+WorkspaceTabs.SelectedIndex);
         }
         Logout_Click(this,new());AssertUi(LoginView.Visibility==Visibility.Visible,"logout");

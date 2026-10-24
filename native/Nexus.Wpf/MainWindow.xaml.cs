@@ -45,7 +45,7 @@ public partial class MainWindow:Window
         {
             var messageText=queryCancellation?.IsCancellationRequested==true?"Consulta cancelada.":error.Message;
             if(LoginView.Visibility==Visibility.Visible)LoginFeedback.Text=messageText;
-            else Status.Text=messageText;
+            else SetStatus(messageText,queryCancellation?.IsCancellationRequested!=true);
             if(query){QueryData.ItemsSource=null;QueryText.Text=messageText;QueryTabs.SelectedIndex=1;}
             return false;
         }
@@ -55,6 +55,12 @@ public partial class MainWindow:Window
             LoginView.IsEnabled=true;BusyInputShield.Visibility=Visibility.Collapsed;BusyStripe.Visibility=Visibility.Collapsed;busy=false;UpdateActions();
             if(previousFocus is UIElement element&&element.IsVisible&&element.IsEnabled)element.Focus();
         }
+    }
+    private void SetStatus(string message,bool error=false)
+    {
+        Status.Text=message;Status.ToolTip=message;
+        Status.Foreground=new SolidColorBrush((Color)ColorConverter.ConvertFromString(error?"#FFADB9":"#9EE3C7"));
+        StatusBadge.Background=new SolidColorBrush((Color)ColorConverter.ConvertFromString(error?"#381E2D":"#1A302D"));
     }
     private string PasswordValue=>ShowPassword.IsChecked==true?VisiblePassword.Text:Password.Password;
     private async void Login_Click(object sender,RoutedEventArgs e)
@@ -155,9 +161,9 @@ public partial class MainWindow:Window
         {
             TableSummary.Text=page.Info.Columns.Count+" colunas · SQLite";
             RowsSummary.Text=(page.Rows.Count==0?"0":(offset+1).ToString())+"–"+(offset+page.Rows.Count)+" nesta página"+(sort is null?" · Clique no cabeçalho para ordenar":" · "+sort+(descending?" ↓":" ↑"));
-            Status.Text="Tabela "+table+" carregada";
+            SetStatus("Tabela "+table+" carregada");
         }
-        else{TableSummary.Text="Nenhuma tabela";RowsSummary.Text="Selecione uma tabela";}
+        else{TableSummary.Text="Nenhuma tabela";RowsSummary.Text="Selecione uma tabela";SetStatus(selected is null?"Selecione um banco":"Banco carregado · nenhuma tabela");}
         PageLabel.Text=(offset/200+1).ToString("D2");UpdateEmpty();UpdateActions();
     }
     private void UpdateEmpty()
@@ -254,8 +260,8 @@ public partial class MainWindow:Window
     {
         if(selected is null||table is null||TableData.SelectedItem is null||busy)return;
         var original=CurrentRow();var id=selected.Id;var name=table;
-        if(MessageBox.Show(this,"Excluir somente a linha selecionada da tabela “"+table+"”?","Nexus · Excluir registro",MessageBoxButton.YesNo,MessageBoxImage.Warning)!=MessageBoxResult.Yes)return;
-        await Run("Excluindo registro…",async()=>{await Task.Run(()=>store!.ChangeRecord(id,name,original,delete:true));await ReloadPage();});
+        var dialog=new ConfirmationDialog(this,"Excluir registro","Excluir a linha selecionada da tabela “"+name+"”?",()=>Task.Run(()=>store!.ChangeRecord(id,name,original,delete:true)));
+        if(dialog.ShowDialog()==true)await Run("Atualizando registros…",ReloadPage);
     }
     private async void AddColumn_Click(object sender,RoutedEventArgs e)
     {
@@ -289,7 +295,7 @@ public partial class MainWindow:Window
             var token=queryCancellation!.Token;
             var result=await Task.Run(()=>store!.Execute(id,sql,token));
             QueryData.ItemsSource=result.Table.DefaultView;
-            Status.Text=result.ReadOnly?result.Table.Rows.Count+" linha(s)"+(result.Truncated?" · primeiras 1.000":" · concluído"):result.Affected+" registro(s) afetado(s) · concluído";
+            SetStatus(result.ReadOnly?result.Table.Rows.Count+" linha(s)"+(result.Truncated?" · primeiras 1.000":" · concluído"):result.Affected+" registro(s) afetado(s) · concluído");
             var text=new StringBuilder(Status.Text+Environment.NewLine+Environment.NewLine);
             for(int n=0;n<result.Table.Rows.Count;n++)
             {text.AppendLine("["+(n+1)+"]");for(int c=0;c<result.Table.Columns.Count;c++)text.AppendLine(result.Table.Columns[c].ColumnName+": "+CellDisplayConverter.Format(result.Table.Rows[n][c]));text.AppendLine();}
@@ -314,12 +320,12 @@ public partial class MainWindow:Window
         if(selected is null||busy)return;var id=selected.Id;
         var folder=new OpenFolderDialog{Title="Escolha a pasta no disco de destino"};if(folder.ShowDialog(this)!=true)return;
         if(MessageBox.Show(this,"Feche outros programas que estejam usando este banco. O Nexus verificará a cópia antes de remover a origem. Continuar?","Nexus · Mover banco",MessageBoxButton.YesNo,MessageBoxImage.Information)!=MessageBoxResult.Yes)return;
-        await Run("Transferindo e verificando o banco…",async()=>{var result=await Task.Run(()=>store!.Move(id,folder.FolderName));await RefreshDatabases(id);Status.Text=result;});
+        await Run("Transferindo e verificando o banco…",async()=>{var result=await Task.Run(()=>store!.Move(id,folder.FolderName));await RefreshDatabases(id);SetStatus(result);});
     }
     private async void DeleteDatabase_Click(object sender,RoutedEventArgs e)
     {
         if(selected is null||busy)return;var item=selected;
-        var dialog=new TextPromptDialog(this,"Excluir banco","O arquivo será enviado para a Lixeira do Windows. Digite o nome para confirmar.","",_=>Task.Run(()=>store!.Delete(item.Id)),item.Name);
+        var dialog=new TextPromptDialog(this,"Excluir banco","O banco “"+item.Name+"” será enviado para a Lixeira. Digite DELETAR para confirmar.","",_=>Task.Run(()=>store!.Delete(item.Id)),"DELETAR",ignoreCase:true);
         if(dialog.ShowDialog()==true){selected=null;await Run("Atualizando seu espaço…",()=>RefreshDatabases());}
     }
     private async void Refresh_Click(object sender,RoutedEventArgs e)=>await Run("Atualizando bancos…",()=>RefreshDatabases());
@@ -342,13 +348,13 @@ public partial class MainWindow:Window
         if(DatabaseHero is null)return;
         bool compact=ActualHeight<820;
         DatabaseHero.Padding=new Thickness(compact?14:20);
-        HeroEyebrow.Visibility=compact?Visibility.Collapsed:Visibility.Visible;
+        HeroEyebrow.Visibility=Visibility.Visible;HeroBrandLabel.Visibility=compact?Visibility.Collapsed:Visibility.Visible;
         DatabasePath.Visibility=compact?Visibility.Collapsed:Visibility.Visible;
         DatabaseTitle.FontSize=compact?22:28;DatabaseTitle.Margin=compact?new Thickness(0):new Thickness(0,10,0,6);
         DatabaseTitle.ToolTip=DatabasePath.Text;
     }
     private void Window_Closing(object? sender,CancelEventArgs e)
-    {if(busy){queryCancellation?.Cancel();e.Cancel=true;Status.Text="Aguarde a operação terminar antes de fechar.";}}
+    {if(busy){queryCancellation?.Cancel();e.Cancel=true;SetStatus("Aguarde a operação terminar antes de fechar.");}}
     private void Window_KeyDown(object sender,KeyEventArgs e)
     {
         if(busy){if(e.Key==Key.Escape)queryCancellation?.Cancel();e.Handled=true;return;}

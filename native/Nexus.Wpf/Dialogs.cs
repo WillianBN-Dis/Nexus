@@ -53,17 +53,18 @@ public sealed class TextPromptDialog:FormWindow
     public string Value=>Input.Text.Trim();
     private readonly Func<string,Task> save;
     private readonly string? confirmation;
-    public TextPromptDialog(Window owner,string title,string description,string initial,Func<string,Task> save,string? confirm=null)
+    private readonly bool ignoreCase;
+    public TextPromptDialog(Window owner,string title,string description,string initial,Func<string,Task> save,string? confirm=null,bool ignoreCase=false)
         :base(owner,title,description,600,440)
     {
-        this.save=save;confirmation=confirm;
-        FieldsPanel.Children.Add(Caption(confirm is null?"Nome":"Digite o nome para confirmar"));Input.Text=initial;FieldsPanel.Children.Add(Input);
-        if(confirm is not null){FieldsPanel.Children.Add(Note("Nome esperado: "+confirm));SaveButton.Content="Confirmar exclusão";SaveButton.Style=(Style)FindResource("Danger");}
+        this.save=save;confirmation=confirm;this.ignoreCase=ignoreCase;
+        FieldsPanel.Children.Add(Caption(confirm is null?"Nome":ignoreCase?"Confirmação":"Digite o nome para confirmar"));Input.Text=initial;FieldsPanel.Children.Add(Input);
+        if(confirm is not null){FieldsPanel.Children.Add(Note(ignoreCase?"Digite "+confirm+" (maiúsculas ou minúsculas).":"Nome esperado: "+confirm));SaveButton.Content="Confirmar exclusão";SaveButton.Style=(Style)FindResource("Danger");}
         Loaded+=(s,e)=>{Input.Focus();Input.SelectAll();};
     }
     protected override Task Save()
     {
-        if(confirmation is not null&&Input.Text!=confirmation)throw new ArgumentException("Digite exatamente o nome informado para confirmar.");
+        if(confirmation is not null&&!string.Equals(ignoreCase?Input.Text.Trim():Input.Text,confirmation,ignoreCase?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal))throw new ArgumentException(ignoreCase?"Digite "+confirmation+" para confirmar.":"Digite exatamente o nome informado para confirmar.");
         if(string.IsNullOrWhiteSpace(Input.Text))throw new ArgumentException("Informe um nome.");
         return save(Value);
     }
@@ -163,4 +164,15 @@ public sealed class RecordFormDialog:FormWindow
         }
         return save(values);
     }
+}
+
+public sealed class ConfirmationDialog:FormWindow
+{
+    private readonly Func<Task> save;
+    public ConfirmationDialog(Window owner,string title,string description,Func<Task> save):base(owner,title,description,610,410)
+    {
+        this.save=save;SaveButton.Content="Excluir registro";SaveButton.Style=(Style)FindResource("Danger");
+        FieldsPanel.Children.Add(Card(Note("Somente o registro selecionado será removido. Os demais dados da tabela serão mantidos.")));
+    }
+    protected override Task Save()=>save();
 }

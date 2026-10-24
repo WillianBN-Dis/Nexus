@@ -40,3 +40,6 @@ Catálogo atual: %LOCALAPPDATA%\Nexus\catalog.sqlite. Nunca usar dados reais em 
 
 ## Manutenção posterior — 0.6.0-wpf.2
 Correção de oscilação de cor das abas e clarão na recarga após criar/excluir tabelas. Dados preservados até a nova leitura estar pronta, navegação sem mudança para tema desabilitado e foco sem adornos pontilhados. Testes WPF de regressão passaram. A migração continua concluída e a automação permanece encerrada.
+
+## Manutenção posterior — 0.6.0-wpf.3
+Ajustes de interface solicitados pelo usuário: mover pasta, confirmação temática, DELETAR/deletar, rolagem discreta, status de tabela no cabeçalho com cores, abas e CTA sem cortes e editor SQL com layout estável. Testes WPF ampliados para esses fluxos.
