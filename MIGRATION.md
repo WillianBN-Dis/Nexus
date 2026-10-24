@@ -65,3 +65,4 @@ Verificação pública posterior: link fixo do instalador e SHA256 conferidos; t
 ## Ajuste 1.1.1 — menu da bandeja
 Menu padrão WinForms substituído por ContextMenu WPF no tema do Nexus: cabeçalho com ícone e status da API, cantos arredondados, ícones por ação, hover violeta, separador discreto e ação de encerrar destacada. Sem trilho branco/destaque azul do Windows. As ações indisponíveis ficam desabilitadas.
 Teste WPF real confirmou abertura com janela principal oculta e estado correto dos itens; screenshot nativo em native/qa/08-menu-bandeja.png inspecionado. Preservados duplo clique para restaurar, desligamento da API, atualização e encerramento. Empacotamento 1.1.1 em andamento.
+Release 1.1.1 publicada: https://github.com/WillianBN-Dis/Nexus/releases/tag/v1.1.1. Workflow 40127279259 passou. Executável autocontido validado com menu aberto em segundo plano; instalador, SHA256 e versão do feed público conferidos. Instalador público salvo em dist/Nexus-Setup.exe.
