@@ -23,14 +23,17 @@ Catálogo atual: %LOCALAPPDATA%\Nexus\catalog.sqlite. Nunca usar dados reais em 
 6. Publicar self-contained win-x64 e instalador com nome Nexus-Setup-0.6.0-wpf.1.exe; não sobrescrever release estável antes de validar.
 7. Documentar, atualizar checkpoint e fazer commits pequenos. Pausar automação ao concluir migração validada.
 
-## Checkpoint atual
-Implementação C#/WPF concluída; empacotamento final em andamento.
+## Checkpoint final — migração concluída
+- Branch local: codex/nexus-wpf. Identificação: 0.6.0-wpf.1. Nenhuma versão 1.0, branch remota ou release foi publicada.
 - SDK .NET 10.0.402 instalado em %LOCALAPPDATA%/NexusDev/dotnet.
-- Núcleo: cadastro/login scrypt compatível, bancos, renomeação, transferência exclusiva verificada, Lixeira, SQL com authorizer/progress handler e cancelamento, edição visual com verificação de linhas obsoletas.
-- Interface: login adaptável, navegação de bancos, modos Visual/SQL, formulários de tabela/coluna/registro, grid, estrutura, paginação/ordenação, estados vazios, confirmação de exclusão, operações em background.
+- Núcleo migrado: cadastro/login scrypt compatível; bancos; renomeação; transferência exclusiva com checkpoint e integridade; exclusão para Lixeira; SQL com leitura/escrita, authorizer, prazo de 5 segundos e cancelamento; tabelas/colunas/registros com paginação, ordenação e controle de edições obsoletas.
+- Interface WPF/XAML concluída: login adaptável, tema escuro, ícone, barra de título Windows, grades virtualizadas, modos Visual/SQL, formulários com validação, estados vazios, confirmação de exclusão e tarefas de banco fora da thread UI. Perfil compacto para janelas de menor altura.
 - Core smoke: 35 verificações passaram, incluindo timeout com rollback e proteção de arquivos.
-- Fixture cruzada: Python → C# e C# → Python passaram (apenas dados temporários).
-- UI smoke WPF real passou: criação, validação, edição, SQL, cancelamento responsivo, tamanhos e Lixeira. Relatório e imagens em native/qa.
-- Dependências atualizadas: Microsoft.Data.Sqlite 10.0.13, SQLitePCLRaw.bundle_e_sqlite3 3.0.5, BouncyCastle.Cryptography 2.6.2. Auditoria NuGet não encontrou vulnerabilidades.
-- Próximo passo: terminar native/build.ps1 -SkipTests, rodar --startup-check e --ui-test no binário autocontido, verificar instalador, registrar commit e encerrar a automação quando tudo passar.
-- Nenhum dado real foi usado em testes. Nenhuma branch/release publicada. Versão 1.0 não criada.
+- Compatibilidade cruzada Python → C# e C# → Python: passou em fixtures temporárias.
+- UI smoke em janelas WPF reais: passou para cadastro/login, tamanhos, tabela, validação, registro, edição, coluna, SQL, alternância, cancelamento responsivo e Lixeira. Repetido no executável autocontido: exit 0.
+- Dependências: Microsoft.Data.Sqlite 10.0.13, SQLitePCLRaw.bundle_e_sqlite3 3.0.5, BouncyCastle.Cryptography 2.6.2. Auditoria NuGet sem vulnerabilidades reportadas.
+- Executável: native/artifacts/publish/Nexus.exe (autocontido Windows x64; não requer Python/runtime separado).
+- Instalador: dist/Nexus-Setup-0.6.0-wpf.1.exe, compilado com sucesso. Atalho opcional e dados do usuário preservados.
+- Guia: native/README.md. Build reproduzível: native/build.ps1. Relatório e imagens de validação: native/qa (gerados, fora do Git).
+- Python legado mantido intacto como referência. Testes não utilizaram bancos nem contas reais.
+- Trabalho concluído: encerrar a automação continuar-migra-o-nexus-wpf para não repetir a migração.
