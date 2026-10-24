@@ -44,3 +44,4 @@ Correção de oscilação de cor das abas e clarão na recarga após criar/exclu
 ## Manutenção posterior — 0.6.0-wpf.3
 Ajustes de interface solicitados pelo usuário: mover pasta, confirmação temática, DELETAR/deletar, rolagem discreta, status de tabela no cabeçalho com cores, abas e CTA sem cortes e editor SQL com layout estável. Testes WPF ampliados para esses fluxos.
 Manutenção 0.6.0-wpf.4: abas preenchem a altura ao maximizar; barra de bancos oculta mantendo rolagem. Testes em 1040x740, 1920x1080, 2560x1440 e maximizado passaram. Build completo e teste do executável autocontido passaram; instalador wpf.4 gerado.
+Manutenção 0.6.0-wpf.5: barras verticais ocultas nos formulários Adicionar registro e Editar registro, mantendo rolagem e removendo o espaço lateral reservado. Build e testes WPF do executável passaram. Versão 1.0 permanece sem publicação.

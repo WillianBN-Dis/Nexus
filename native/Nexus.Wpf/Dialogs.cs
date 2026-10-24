@@ -8,6 +8,7 @@ namespace Nexus.Wpf;
 public abstract class FormWindow:Window
 {
     protected readonly StackPanel FieldsPanel=new();
+    protected readonly ScrollViewer FieldsScroll=new();
     protected readonly Button SaveButton=new(){Content="Salvar  →",MinWidth=150};
     protected readonly Button CancelButton=new(){Content="Cancelar",IsCancel=true,MinWidth=110};
     protected readonly TextBlock Feedback=new(){TextWrapping=TextWrapping.Wrap,Foreground=new SolidColorBrush(Color.FromRgb(255,171,191))};
@@ -26,7 +27,7 @@ public abstract class FormWindow:Window
         top.Children.Add(new TextBlock{Text="NEXUS  /  DATABASE STUDIO",Foreground=(Brush)FindResource("Accent"),FontSize=11,FontWeight=FontWeights.Bold});
         top.Children.Add(new TextBlock{Text=heading,FontSize=26,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,10,0,8)});
         top.Children.Add(new TextBlock{Text=description,Foreground=(Brush)FindResource("Muted"),TextWrapping=TextWrapping.Wrap});root.Children.Add(top);
-        var scroll=new ScrollViewer{Content=FieldsPanel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Padding=new Thickness(0,0,10,0)};
+        var scroll=FieldsScroll;scroll.Content=FieldsPanel;scroll.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;scroll.HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled;scroll.Padding=new Thickness(0,0,10,0);
         Grid.SetRow(scroll,1);root.Children.Add(scroll);
         var footer=new StackPanel{Margin=new Thickness(0,12,0,0)};
         footer.Children.Add(Feedback);Feedback.Margin=new Thickness(0,0,0,12);
@@ -126,6 +127,8 @@ public sealed class RecordFormDialog:FormWindow
         :base(owner,record is null?"Adicionar registro":"Editar registro","Escolha Valor, NULL ou Padrão para cada campo. * indica campo obrigatório.",720,700)
     {
         this.save=save;SaveButton.Content="Salvar registro  →";
+        FieldsScroll.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;
+        FieldsScroll.Padding=new Thickness(0);
         for(int n=0;n<info.Columns.Count;n++)
         {
             var column=info.Columns[n];if(column.Hidden!=0)continue;

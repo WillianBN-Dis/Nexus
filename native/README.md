@@ -1,9 +1,9 @@
 # Nexus para Windows — C# / WPF
 
-Prévia **0.6.0-wpf.4**, branch local `codex/nexus-wpf`. A versão 1.0 permanece reservada para a futura release no GitHub.
+Prévia **0.6.0-wpf.5**, branch local `codex/nexus-wpf`. A versão 1.0 permanece reservada para a futura release no GitHub.
 
 ## Executar
-- Instalador: `../dist/Nexus-Setup-0.6.0-wpf.4.exe`.
+- Instalador: `../dist/Nexus-Setup-0.6.0-wpf.5.exe`.
 - Executável independente: `artifacts/publish/Nexus.exe`.
 - Windows x64. O pacote inclui o runtime .NET; não é necessário instalar Python nem o SDK para usar.
 - O instalador permite escolher o atalho da área de trabalho. Atualiza o aplicativo instalado mantendo o catálogo e os bancos do usuário.
@@ -47,5 +47,5 @@ O binário e o instalador ainda não têm assinatura digital. Esta prévia conse
 ## Correções de interface — WPF.2
 Abas mantêm fundo opaco e estável ao mover o mouse; o foco usa uma borda discreta, sem o adorno pontilhado do tema. Durante operações, uma camada transparente bloqueia novas interações sem desabilitar as listas ou mudar suas cores. Os dados são lidos em background e aplicados juntos: a grade não é esvaziada entre a consulta e o resultado. A lista de tabelas só é substituída se seus nomes mudarem. Testes de regressão observam os frames de renderização e as mudanças de ItemsSource durante recarga, criação e exclusão.
 
-## Ajustes de interface — WPF.4
+## Ajustes de interface — WPF.5
 Ação Mover de Pasta; confirmação de registro no tema WPF; exclusão de banco confirmada por DELETAR sem diferenciar maiúsculas; rolagem fina com trilho transparente; status no cabeçalho junto ao SQLite, verde em sucesso e vermelho em erro. Cabeçalhos usam um painel de abas sem recortes; botão Novo banco ganha espaço adequado. O SQL mantém altura limitada, sem divisor arrastável, sem tooltip e sem esticar o botão Executar.
