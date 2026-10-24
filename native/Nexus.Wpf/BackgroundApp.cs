@@ -20,7 +20,7 @@ public partial class MainWindow
         ApiHost.Log.Failed+=()=>Dispatcher.BeginInvoke(()=>tray?.ShowBalloonTip(6000,"Nexus · Log da API","Não foi possível gravar o log. Confira o espaço em disco e as permissões da pasta.",Forms.ToolTipIcon.Warning));
         var resource=Application.GetResourceStream(new Uri("pack://application:,,,/Assets/nexus.ico"));
         using(var stream=resource.Stream)
-        using(var icon=new System.Drawing.Icon(stream))tray=new Forms.NotifyIcon{Icon=(System.Drawing.Icon)icon.Clone(),Text="Nexus · Em segundo plano",Visible=true};
+        using(var icon=new System.Drawing.Icon(stream,Forms.SystemInformation.SmallIconSize))tray=new Forms.NotifyIcon{Icon=(System.Drawing.Icon)icon.Clone(),Text="Nexus · Em segundo plano",Visible=true};
         trayMenu=new TrayMenu();
         trayMenu.OpenItem.Click+=(s,e)=>ShowFromTray();
         trayMenu.StopApiItem.Click+=async(s,e)=>

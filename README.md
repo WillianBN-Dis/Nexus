@@ -43,9 +43,9 @@ A versão 1.0 trabalha com SQLite local. Não inclui sincronização, recuperaç
 A implementação ativa fica em [native/](native/README.md), em C#/.NET 10/WPF. Para compilar e validar com SDK .NET 10 e Inno Setup 6:
 
 ```powershell
-./native/build.ps1 -Version 1.1.1
+./native/build.ps1 -Version 1.1.2
 ```
 
-Veja [como lançar atualizações](UPDATES.md). Publicar uma tag estável, como `v1.1.2`, executa os testes e gera automaticamente a release com o instalador e os pacotes que os aplicativos usam para atualizar.
+Veja [como lançar atualizações](UPDATES.md). Publicar uma tag estável, como `v1.1.3`, executa os testes e gera automaticamente a release com o instalador e os pacotes que os aplicativos usam para atualizar.
 
 O código Python original permanece preservado na raiz; a [documentação legada](docs/LEGACY-PYTHON.md) registra as versões anteriores.

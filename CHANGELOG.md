@@ -1,5 +1,11 @@
 # Histórico do Nexus
 
+## 1.1.2
+
+- Ícone refinado com fundo azul-escuro uniforme e sem contorno luminoso.
+- ICO com resoluções de 16 a 256 px, incluindo tamanhos intermediários para escalas do Windows.
+- Barra de título usa ICO com múltiplas resoluções; bandeja seleciona o tamanho pequeno do sistema e imagens WPF usam redução de alta qualidade.
+
 ## 1.1.1
 
 - Menu da bandeja redesenhado em WPF, com identidade visual do Nexus, cantos arredondados, ícones, status da API e hover violeta.
