@@ -26,6 +26,7 @@ public partial class MainWindow:Window
     public MainWindow(string? root)
     {
         dataRoot=root??Environment.GetEnvironmentVariable("NEXUS_DATA_DIR");InitializeComponent();
+        LoginVersionLabel.Text="DATABASE STUDIO   /   "+AppVersion.Label;AccountVersionLabel.Text="Conta local · "+AppVersion.Label;
         SourceInitialized+=(s,e)=>WindowAppearance.Apply(this);
     }
     private async Task<bool> Run(string message,Func<Task> work,bool query=false)

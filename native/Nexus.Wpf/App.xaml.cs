@@ -17,6 +17,7 @@ public partial class App:Application
             await NativeUiChecks.Run(this,e.Args);return;
         }
         var window=new MainWindow();MainWindow=window;window.Show();
+        if(!e.Args.Contains("--startup-check"))window.StartUpdateChecks();
         if(e.Args.Contains("--startup-check"))
         {
             var timer=new DispatcherTimer{Interval=TimeSpan.FromSeconds(3)};

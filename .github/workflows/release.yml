@@ -1,0 +1,55 @@
+name: Publicar Nexus para Windows
+
+on:
+  push:
+    tags: ['v[0-9]*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nexus-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compilar, testar e gerar instalador e atualização
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Tag inválida: use v1.0.1.' }
+          ./native/build.ps1 -Version $version
+      - name: Publicar somente os pacotes validados
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          $folder = "dist/releases/$version"
+          $assets = @(Get-ChildItem $folder -Filter '*.nupkg' | ForEach-Object FullName)
+          $assets += @("$folder/Nexus-Setup.exe", "$folder/releases.win.json", "$folder/SHA256SUMS.txt")
+          $notes = @"
+          Nexus $version para Windows x64.
+
+          Instale pelo arquivo Nexus-Setup.exe. O runtime .NET está incluído.
+          Atualizações são baixadas automaticamente e aplicadas na próxima abertura.
+          Contas locais e bancos existentes são preservados.
+
+          Guia e histórico: https://github.com/$env:GH_REPO/blob/main/CHANGELOG.md
+          "@
+          $notes | Set-Content release-notes.txt -Encoding utf8
+          gh release create $env:RELEASE_TAG @assets --verify-tag --draft --title "Nexus $version" --notes-file release-notes.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Não foi possível criar a release.' }
+          gh release edit $env:RELEASE_TAG --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Não foi possível publicar a release.' }
