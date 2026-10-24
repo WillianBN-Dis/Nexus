@@ -1,3 +1,9 @@
+# Nexus — C# / WPF
+
+A implementação ativa nesta branch é a prévia **0.6.0-wpf.1** em `native/`. Consulte [o guia WPF](native/README.md) para executar, compilar e testar. O instalador fica em `dist/Nexus-Setup-0.6.0-wpf.1.exe`. Os fontes Python abaixo permanecem preservados como histórico da migração.
+
+---
+
 # Nexus 0.6.0 — Interface UI.1
 
 Aplicativo desktop Windows para bancos SQLite locais. Cadastro e login por usuário, criação e renomeação de bancos, editor SQL para tabelas e registros, exclusão para a Lixeira e transferência entre pastas/discos.

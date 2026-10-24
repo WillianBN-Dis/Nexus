@@ -10,3 +10,11 @@ dist/
 
 dist-*/
 build-*/
+
+native/**/bin/
+native/**/obj/
+native/publish/
+
+native-build.log
+native/qa/
+native/artifacts/
