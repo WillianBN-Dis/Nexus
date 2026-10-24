@@ -2,13 +2,13 @@
 AppId=Nexus.DatabaseStudio
 AppName=Nexus
 AppVersion=0.6.0
-AppVerName=Nexus 0.6.0 — WPF.3
-VersionInfoVersion=0.6.0.3
+AppVerName=Nexus 0.6.0 — WPF.4
+VersionInfoVersion=0.6.0.4
 DefaultDirName={localappdata}\Programs\Nexus
 DefaultGroupName=Nexus
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=Nexus-Setup-0.6.0-wpf.3
+OutputBaseFilename=Nexus-Setup-0.6.0-wpf.4
 SetupIconFile=..\assets\nexus.ico
 UninstallDisplayIcon={app}\Nexus.exe
 WizardStyle=modern

@@ -19,5 +19,5 @@ try {
     if (-not (Test-Path -LiteralPath $compiler)) { $compiler = (Get-Command ISCC -ErrorAction Stop).Source }
     & $compiler native/installer.iss
     if ($LASTEXITCODE -ne 0) { throw 'A geração do instalador falhou.' }
-    Write-Output (Join-Path $nexusRoot 'dist/Nexus-Setup-0.6.0-wpf.3.exe')
+    Write-Output (Join-Path $nexusRoot 'dist/Nexus-Setup-0.6.0-wpf.4.exe')
 } finally { Pop-Location }

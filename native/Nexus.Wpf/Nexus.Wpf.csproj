@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>WinExe</OutputType><AssemblyName>Nexus</AssemblyName><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><AllowUnsafeBlocks>true</AllowUnsafeBlocks><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><ApplicationIcon>../../assets/nexus.ico</ApplicationIcon><Version>0.6.0</Version><InformationalVersion>0.6.0-wpf.3</InformationalVersion></PropertyGroup>
+  <PropertyGroup><OutputType>WinExe</OutputType><AssemblyName>Nexus</AssemblyName><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><AllowUnsafeBlocks>true</AllowUnsafeBlocks><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><ApplicationIcon>../../assets/nexus.ico</ApplicationIcon><Version>0.6.0</Version><InformationalVersion>0.6.0-wpf.4</InformationalVersion></PropertyGroup>
   <ItemGroup><ProjectReference Include="../Nexus.Core/Nexus.Core.csproj"/><Resource Include="../../assets/nexus.png" Link="Assets/nexus.png"/></ItemGroup>
 </Project>

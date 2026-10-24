@@ -179,7 +179,7 @@ public partial class MainWindow
         WorkspaceTabs.SelectedItem=VisualTab;await Idle();AssertUi(TableData.IsVisible,"alternância de modos");
         await Run("Teste",async()=>{var disposable=await Task.Run(()=>store!.Create("Fixture de exclusão"));await Task.Run(()=>store!.Delete(disposable.Id));});
         AssertUi(store!.List().Count==1,"exclusão para Lixeira");
-        foreach(var size in new[]{(1040d,740d),(1920d,1080d),(1280d,880d)})
+        foreach(var size in new[]{(1040d,740d),(1920d,1080d),(2560d,1440d),(1280d,880d)})
         {
             Width=size.Item1;Height=size.Item2;await Settle();
             foreach(var tab in new[]{VisualTab,SqlTab}.Concat(QueryTabs.Items.Cast<TabItem>()))
@@ -188,6 +188,11 @@ public partial class MainWindow
                     new Typeface(tab.FontFamily,tab.FontStyle,tab.FontWeight,tab.FontStretch),tab.FontSize,Brushes.White,VisualTreeHelper.GetDpi(this).PixelsPerDip);
                 if(tab.IsVisible)AssertUi(tab.ActualWidth+1>=header.Width+tab.Padding.Left+tab.Padding.Right,"cabeçalho cortado: "+tab.Header);
             }
+            var visualContent=(FrameworkElement)VisualTab.Content;
+            var contentTop=visualContent.TranslatePoint(new Point(),WorkspaceTabs).Y;
+            AssertUi(contentTop<100,"conteúdo visual centralizado em vez de ocupar o painel: "+contentTop);
+            AssertUi(visualContent.ActualHeight>WorkspaceTabs.ActualHeight-120,"conteúdo visual não preenche a altura");
+            AssertUi(ScrollViewer.GetVerticalScrollBarVisibility(Databases)==ScrollBarVisibility.Hidden,"barra de bancos visível");
             AssertUi(TableData.ActualHeight>50&&NextPage.IsVisible,"layout do workspace: "+TableData.ActualHeight+" visible="+NextPage.IsVisible+" mode="+WorkspaceTabs.SelectedIndex);
         }
         Logout_Click(this,new());AssertUi(LoginView.Visibility==Visibility.Visible,"logout");
