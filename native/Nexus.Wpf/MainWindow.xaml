@@ -12,7 +12,7 @@
         <TextBlock Text="Um espaço tranquilo para explorar, organizar&#10;e dar vida aos seus dados." FontSize="16" Foreground="{StaticResource Muted}"/>
         <StackPanel Orientation="Horizontal" Margin="0,24,0,0"><Border Background="#24213B" CornerRadius="12" Padding="12,7" Margin="0,0,8,0"><TextBlock Text="SQLite" Foreground="{StaticResource Accent}" FontSize="12"/></Border><Border Background="#24213B" CornerRadius="12" Padding="12,7" Margin="0,0,8,0"><TextBlock Text="Local" Foreground="{StaticResource Accent}" FontSize="12"/></Border><Border Background="#24213B" CornerRadius="12" Padding="12,7"><TextBlock Text="Windows" Foreground="{StaticResource Accent}" FontSize="12"/></Border></StackPanel>
        </StackPanel>
-       <TextBlock Grid.Row="2" Text="DATABASE STUDIO   /   0.6.0-wpf.1" Foreground="{StaticResource Muted}" FontSize="11"/>
+       <TextBlock Grid.Row="2" Text="DATABASE STUDIO   /   0.6.0-wpf.2" Foreground="{StaticResource Muted}" FontSize="11"/>
       </Grid>
      </Border>
      <StackPanel Grid.Column="1" Width="460" VerticalAlignment="Center">
@@ -33,7 +33,7 @@
   <Grid x:Name="WorkspaceView" Visibility="Collapsed" MaxWidth="2400"><Grid.ColumnDefinitions><ColumnDefinition Width="270"/><ColumnDefinition/></Grid.ColumnDefinitions>
    <Border Background="{StaticResource Panel}" CornerRadius="24" Padding="18" Margin="0,0,20,0"><DockPanel LastChildFill="True">
     <StackPanel DockPanel.Dock="Top"><StackPanel Orientation="Horizontal" Margin="4,4,0,28"><Image Source="Assets/nexus.png" Width="42" Height="42"/><TextBlock Text="nexus" FontSize="28" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/></StackPanel><TextBlock Text="SEU ESPAÇO" Foreground="{StaticResource Muted}" FontSize="11" Margin="4,0,0,12"/><Button Content="＋ Novo banco de dados" Click="Create_Click" Style="{StaticResource Primary}" Margin="0,0,0,22"/><TextBlock Text="MEUS BANCOS" Foreground="{StaticResource Muted}" FontSize="11" Margin="4,0,0,10"/><TextBox x:Name="DatabaseSearch" ToolTip="Filtrar bancos pelo nome" TextChanged="DatabaseSearch_Changed" Margin="0,0,0,12" AutomationProperties.Name="Buscar bancos"/></StackPanel>
-    <Border DockPanel.Dock="Bottom" Background="{StaticResource Surface}" CornerRadius="14" Padding="12" Margin="0,14,0,0"><StackPanel><TextBlock x:Name="AccountName" FontWeight="SemiBold"/><TextBlock Text="Conta local · 0.6.0-wpf.1" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,6,0,14"/><Button Content="Sair da conta" Click="Logout_Click"/></StackPanel></Border>
+    <Border DockPanel.Dock="Bottom" Background="{StaticResource Surface}" CornerRadius="14" Padding="12" Margin="0,14,0,0"><StackPanel><TextBlock x:Name="AccountName" FontWeight="SemiBold"/><TextBlock Text="Conta local · 0.6.0-wpf.2" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,6,0,14"/><Button Content="Sair da conta" Click="Logout_Click"/></StackPanel></Border>
     <ListBox x:Name="Databases" SelectionChanged="Database_Selected" AutomationProperties.Name="Meus bancos"><ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}"/></DataTemplate></ListBox.ItemTemplate></ListBox>
    </DockPanel></Border>
    <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -62,6 +62,7 @@
     <TextBlock x:Name="Status" Grid.Row="3" Text="Pronto para começar" Foreground="{StaticResource Muted}" FontSize="12" Margin="6,12,0,0" TextWrapping="Wrap"/>
    </Grid>
   </Grid>
-  <Border x:Name="BusyStripe" Visibility="Collapsed" VerticalAlignment="Bottom" HorizontalAlignment="Center" Background="#29233E" CornerRadius="14" Padding="18,10" Panel.ZIndex="100"><StackPanel Orientation="Horizontal"><ProgressBar IsIndeterminate="True" Width="70" Height="5" Foreground="{StaticResource Accent}" Background="#453960" VerticalAlignment="Center"/><TextBlock x:Name="BusyText" Text="Trabalhando…" Margin="14,0"/><Button x:Name="CancelQueryButton" Content="Cancelar consulta" Click="CancelQuery_Click" Visibility="Collapsed" Padding="12,6" MinHeight="30"/></StackPanel></Border>
+  <Border x:Name="BusyInputShield" Background="Transparent" Visibility="Collapsed" Panel.ZIndex="50"/>
+  <Border x:Name="BusyStripe" Focusable="True" Visibility="Collapsed" VerticalAlignment="Bottom" HorizontalAlignment="Center" Background="#29233E" CornerRadius="14" Padding="18,10" Panel.ZIndex="100"><StackPanel Orientation="Horizontal"><ProgressBar IsIndeterminate="True" Width="70" Height="5" Foreground="{StaticResource Accent}" Background="#453960" VerticalAlignment="Center"/><TextBlock x:Name="BusyText" Text="Trabalhando…" Margin="14,0"/><Button x:Name="CancelQueryButton" Content="Cancelar consulta" Click="CancelQuery_Click" Visibility="Collapsed" Padding="12,6" MinHeight="30"/></StackPanel></Border>
  </Grid>
 </Window>

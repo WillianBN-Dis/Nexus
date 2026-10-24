@@ -1,9 +1,9 @@
 # Nexus para Windows — C# / WPF
 
-Prévia **0.6.0-wpf.1**, branch local `codex/nexus-wpf`. A versão 1.0 permanece reservada para a futura release no GitHub.
+Prévia **0.6.0-wpf.2**, branch local `codex/nexus-wpf`. A versão 1.0 permanece reservada para a futura release no GitHub.
 
 ## Executar
-- Instalador: `../dist/Nexus-Setup-0.6.0-wpf.1.exe`.
+- Instalador: `../dist/Nexus-Setup-0.6.0-wpf.2.exe`.
 - Executável independente: `artifacts/publish/Nexus.exe`.
 - Windows x64. O pacote inclui o runtime .NET; não é necessário instalar Python nem o SDK para usar.
 - O instalador permite escolher o atalho da área de trabalho. Atualiza o aplicativo instalado mantendo o catálogo e os bancos do usuário.
@@ -43,3 +43,6 @@ Compatibilidade cruzada: gere uma fixture com `native/scripts/legacy_fixture.py 
 
 ## Distribuição e limites
 O binário e o instalador ainda não têm assinatura digital. Esta prévia conserva SQLite local e login local; não adiciona sincronização online nem suporte a MySQL/PostgreSQL. Os fontes Python são mantidos como referência e alternativa durante a transição. Nada é publicado automaticamente no GitHub.
+
+## Correções de interface — WPF.2
+Abas mantêm fundo opaco e estável ao mover o mouse; o foco usa uma borda discreta, sem o adorno pontilhado do tema. Durante operações, uma camada transparente bloqueia novas interações sem desabilitar as listas ou mudar suas cores. Os dados são lidos em background e aplicados juntos: a grade não é esvaziada entre a consulta e o resultado. A lista de tabelas só é substituída se seus nomes mudarem. Testes de regressão observam os frames de renderização e as mudanças de ItemsSource durante recarga, criação e exclusão.

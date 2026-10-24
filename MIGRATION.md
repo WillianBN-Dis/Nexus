@@ -37,3 +37,6 @@ Catálogo atual: %LOCALAPPDATA%\Nexus\catalog.sqlite. Nunca usar dados reais em 
 - Guia: native/README.md. Build reproduzível: native/build.ps1. Relatório e imagens de validação: native/qa (gerados, fora do Git).
 - Python legado mantido intacto como referência. Testes não utilizaram bancos nem contas reais.
 - Trabalho concluído: encerrar a automação continuar-migra-o-nexus-wpf para não repetir a migração.
+
+## Manutenção posterior — 0.6.0-wpf.2
+Correção de oscilação de cor das abas e clarão na recarga após criar/excluir tabelas. Dados preservados até a nova leitura estar pronta, navegação sem mudança para tema desabilitado e foco sem adornos pontilhados. Testes WPF de regressão passaram. A migração continua concluída e a automação permanece encerrada.

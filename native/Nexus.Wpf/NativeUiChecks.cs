@@ -18,7 +18,7 @@ internal static class NativeUiChecks
         {
             var window=new MainWindow(data);app.MainWindow=window;window.Show();
             await window.ExerciseAsync(output);
-            System.IO.File.WriteAllText(System.IO.Path.Combine(output,"ui-result.txt"),"PASS: WPF real. Login, tamanhos, cadastro, tabela, validação, registro, edição, coluna, SQL, alternância, cancelamento e responsividade.\n");
+            System.IO.File.WriteAllText(System.IO.Path.Combine(output,"ui-result.txt"),"PASS: WPF real. Login, tamanhos, cadastro, tabela, validação, registro, edição, coluna, SQL, alternância, cancelamento, responsividade e recarga sem limpar a grade/desabilitar a navegação.\n");
             window.Close();app.Shutdown(0);
         }
         catch(Exception error)
@@ -107,6 +107,29 @@ public partial class MainWindow
         await Run("Teste",ReloadPage);AssertUi(page!.Info.Columns.Count==5,"coluna");
         await Task.Run(()=>store!.InsertRecord(id,table,new Dictionary<string,object?>{{"nome","Bruno"},{"idade",22L},{"contato","bruno@example.test"},{"cidade","Curitiba"}}));
         sort="idade";descending=true;await Run("Teste",ReloadPage);AssertUi(Convert.ToInt64(page!.Rows[0].Values[2])==30,"ordenação");
+        int blankSources=0,disabledFrames=0,renderedFrames=0;
+        var sourceDescriptor=System.ComponentModel.DependencyPropertyDescriptor.FromProperty(ItemsControl.ItemsSourceProperty,typeof(DataGrid));
+        EventHandler sourceChanged=(s,e)=>{if(TableData.ItemsSource is null)blankSources++;};
+        EventHandler frame=(s,e)=>{renderedFrames++;if(!Databases.IsEnabled||!WorkspaceTabs.IsEnabled)disabledFrames++;};
+        sourceDescriptor.AddValueChanged(TableData,sourceChanged);CompositionTarget.Rendering+=frame;
+        try
+        {
+            await Run("Teste de recarga",async()=>{await Task.Delay(100);await ReloadPage();});
+            await Run("Teste de criação",async()=>
+            {
+                await Task.Run(()=>store!.CreateTable(id,"transitoria",new[]{new ColumnSpec("descricao","TEXT")}));
+                table="transitoria";offset=0;sort=null;await Task.Delay(100);await ReloadTables();
+            });
+            await Run("Teste de exclusão",async()=>
+            {
+                await Task.Run(()=>store!.DropTable(id,"transitoria"));
+                table=null;await Task.Delay(100);await ReloadTables();
+            });
+            AssertUi(blankSources==0,"a grade foi limpa durante uma recarga");
+            AssertUi(renderedFrames>0&&disabledFrames==0,"a navegação mudou para o tema desabilitado durante a recarga");
+            AssertUi(TableData.IsVisible&&page?.Rows.Count==2,"a tabela não reapareceu após criar/excluir");
+        }
+        finally{sourceDescriptor.RemoveValueChanged(TableData,sourceChanged);CompositionTarget.Rendering-=frame;}
         Snapshot(output,"04-visual");
         WindowState=WindowState.Maximized;await Settle();Snapshot(output,"05-visual-maximizado");WindowState=WindowState.Normal;await Settle();
         WorkspaceTabs.SelectedItem=SqlTab;Sql.Text="SELECT nome, idade, cidade FROM clientes ORDER BY idade DESC;";Query_Click(this,new());await Idle();

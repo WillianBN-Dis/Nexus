@@ -16,6 +16,7 @@ public partial class MainWindow:Window
     private DatabaseItem? selected;
     private List<DatabaseItem> databases=[];
     private TablePage? page;
+    private string? displayedDatabase,displayedTable;
     private string? table,sort;
     private bool descending,busy,suppressSelection;
     private int offset,loginFailures;
@@ -30,7 +31,9 @@ public partial class MainWindow:Window
     private async Task<bool> Run(string message,Func<Task> work,bool query=false)
     {
         if(busy)return false;
-        busy=true;LoginView.IsEnabled=false;WorkspaceView.IsEnabled=false;BusyText.Text=message;BusyStripe.Visibility=Visibility.Visible;
+        var previousFocus=Keyboard.FocusedElement;
+        busy=true;LoginView.IsEnabled=false;BusyInputShield.Visibility=Visibility.Visible;BusyText.Text=message;BusyStripe.Visibility=Visibility.Visible;
+        BusyStripe.Focus();UpdateActions();
         CancelQueryButton.Visibility=query?Visibility.Visible:Visibility.Collapsed;
         if(query)queryCancellation=new();
         try
@@ -49,7 +52,8 @@ public partial class MainWindow:Window
         finally
         {
             queryCancellation?.Dispose();queryCancellation=null;
-            LoginView.IsEnabled=true;WorkspaceView.IsEnabled=true;BusyStripe.Visibility=Visibility.Collapsed;busy=false;UpdateActions();
+            LoginView.IsEnabled=true;BusyInputShield.Visibility=Visibility.Collapsed;BusyStripe.Visibility=Visibility.Collapsed;busy=false;UpdateActions();
+            if(previousFocus is UIElement element&&element.IsVisible&&element.IsEnabled)element.Focus();
         }
     }
     private string PasswordValue=>ShowPassword.IsChecked==true?VisiblePassword.Text:Password.Password;
@@ -97,26 +101,58 @@ public partial class MainWindow:Window
     }
     private async Task ReloadTables()
     {
-        var names=selected is null?new List<string>():await Task.Run(()=>store!.Tables(selected.Id));
-        if(table is null||!names.Contains(table)){table=names.FirstOrDefault();sort=null;offset=0;}
-        suppressSelection=true;
-        try{Tables.ItemsSource=names;Tables.SelectedItem=table;}
-        finally{suppressSelection=false;}
-        await ReloadPage();
+        var id=selected?.Id;var requestedTable=table;var requestedSort=sort;var requestedOffset=offset;var reverse=descending;
+        try
+        {
+            // Fetch a complete snapshot first. No collection is cleared while I/O runs.
+            var next=await Task.Run(()=>
+            {
+                var names=id is null?new List<string>():store!.Tables(id);
+                var target=requestedTable is not null&&names.Contains(requestedTable)?requestedTable:names.FirstOrDefault();
+                var order=target==requestedTable?requestedSort:null;var skip=target==requestedTable?requestedOffset:0;
+                var data=id is null||target is null?null:FetchPage(id,target,order,reverse,skip);
+                return (names,target,data);
+            });
+            table=next.target;
+            suppressSelection=true;
+            try
+            {
+                if(!Tables.Items.Cast<string>().SequenceEqual(next.names))Tables.ItemsSource=next.names;
+                Tables.SelectedItem=table;
+                ApplyPage(next.data);
+            }
+            finally{suppressSelection=false;}
+        }
+        catch{page=null;UpdateActions();throw;}
+    }
+    private sealed record PageSnapshot(TablePage Page,string? Sort,int Offset);
+    private PageSnapshot FetchPage(string id,string name,string? order,bool reverse,int skip)
+    {
+        var info=store!.TableInfo(id,name);
+        if(order is not null&&!info.Columns.Any(col=>col.Name==order))order=null;
+        var data=store.BrowsePage(id,name,order,reverse,skip);
+        if(skip>0&&data.Rows.Count==0){skip=Math.Max(0,skip-200);data=store.BrowsePage(id,name,order,reverse,skip);}
+        return new(data,order,skip);
     }
     private async Task ReloadPage()
     {
-        page=null;TableData.ItemsSource=null;StructureData.ItemsSource=null;
-        if(selected is not null&&table is not null)
+        var id=selected?.Id;var name=table;var order=sort;var reverse=descending;var skip=offset;
+        try
         {
-            var id=selected.Id;var name=table;
-            // SQL mode may have changed the structure while a sort was selected.
-            var info=await Task.Run(()=>store!.TableInfo(id,name));
-            if(sort is not null&&!info.Columns.Any(col=>col.Name==sort))sort=null;
-            page=await Task.Run(()=>store!.BrowsePage(id,name,sort,descending,offset));
-            if(offset>0&&page.Rows.Count==0){offset=Math.Max(0,offset-200);page=await Task.Run(()=>store!.BrowsePage(id,name,sort,descending,offset));}
-            TableData.ItemsSource=page.Table.DefaultView;
-            StructureData.ItemsSource=page.Info.Columns.Select(col=>new{Coluna=col.Name,Tipo=col.Type,Obrigatória=col.Required?"Sim":"Opcional",Chave=col.Key>0?"Primária":"—",Calculada=col.Hidden!=0?"Sim":"Não"}).ToList();
+            var next=id is null||name is null?null:await Task.Run(()=>FetchPage(id,name,order,reverse,skip));
+            ApplyPage(next);
+        }
+        catch{page=null;UpdateActions();throw;}
+    }
+    private void ApplyPage(PageSnapshot? snapshot)
+    {
+        page=snapshot?.Page;sort=snapshot?.Sort;offset=snapshot?.Offset??0;
+        displayedDatabase=selected?.Id;displayedTable=table;
+        // All UI changes happen together, after the background read has finished.
+        TableData.ItemsSource=page?.Table.DefaultView;
+        StructureData.ItemsSource=page?.Info.Columns.Select(col=>new{Coluna=col.Name,Tipo=col.Type,Obrigatória=col.Required?"Sim":"Opcional",Chave=col.Key>0?"Primária":"—",Calculada=col.Hidden!=0?"Sim":"Não"}).ToList();
+        if(page is not null)
+        {
             TableSummary.Text=page.Info.Columns.Count+" colunas · SQLite";
             RowsSummary.Text=(page.Rows.Count==0?"0":(offset+1).ToString())+"–"+(offset+page.Rows.Count)+" nesta página"+(sort is null?" · Clique no cabeçalho para ordenar":" · "+sort+(descending?" ↓":" ↑"));
             Status.Text="Tabela "+table+" carregada";
@@ -134,7 +170,7 @@ public partial class MainWindow:Window
     private void UpdateActions()
     {
         if(RenameDatabaseButton is null)return;
-        var hasDatabase=selected is not null&&!busy;var hasTable=hasDatabase&&table is not null&&page is not null;
+        var hasDatabase=selected is not null&&!busy;var hasTable=hasDatabase&&table is not null&&page is not null&&displayedDatabase==selected?.Id&&displayedTable==table;
         RenameDatabaseButton.IsEnabled=MoveDatabaseButton.IsEnabled=DeleteDatabaseButton.IsEnabled=NewTableButton.IsEnabled=ExecuteButton.IsEnabled=hasDatabase;
         Tables.IsEnabled=hasDatabase&&Tables.Items.Count>0;
         NewRecordButton.IsEnabled=AddColumnButton.IsEnabled=DropTableButton.IsEnabled=hasTable;
@@ -314,7 +350,10 @@ public partial class MainWindow:Window
     private void Window_Closing(object? sender,CancelEventArgs e)
     {if(busy){queryCancellation?.Cancel();e.Cancel=true;Status.Text="Aguarde a operação terminar antes de fechar.";}}
     private void Window_KeyDown(object sender,KeyEventArgs e)
-    {if(e.Key==Key.Enter&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)&&WorkspaceView.Visibility==Visibility.Visible&&WorkspaceTabs.SelectedItem==SqlTab){e.Handled=true;Query_Click(sender,e);}}
+    {
+        if(busy){if(e.Key==Key.Escape)queryCancellation?.Cancel();e.Handled=true;return;}
+        if(e.Key==Key.Enter&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)&&WorkspaceView.Visibility==Visibility.Visible&&WorkspaceTabs.SelectedItem==SqlTab){e.Handled=true;Query_Click(sender,e);}
+    }
 }
 public sealed class CellDisplayConverter:System.Windows.Data.IValueConverter
 {
