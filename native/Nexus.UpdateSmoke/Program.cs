@@ -33,6 +33,7 @@ try
     store.Register("update-fixture","temporary12345");store.Login("update-fixture","temporary12345");
     var database=store.Create("Preservar na atualização");store.Execute(database.Id,"CREATE TABLE exemplo(id INTEGER PRIMARY KEY, nome TEXT)");
     store.Execute(database.Id,"INSERT INTO exemplo(nome) VALUES('preservado')");
+    var preservedToken=store.CreateApiKey("preservar chave",false,[database.Id]);
     var before=Directory.GetFiles(userdata,"*",SearchOption.AllDirectories).ToDictionary(p=>p,p=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(p))));
     UpdateManager Manager(string current,string source,string packageFolder)=>new(source,locator:new TestVelopackLocator("Nexus.DatabaseStudio",current,packageFolder,Path.Combine(install,"current"),install,Path.Combine(install,"Update.exe"),"win"));
     var packages=Path.Combine(install,"packages");Directory.CreateDirectory(packages);
@@ -62,6 +63,7 @@ try
     await RunProcess(Path.Combine(install,"current","Nexus.exe"),["--startup-check"]);
     Assert(before.All(entry=>File.Exists(entry.Key)&&Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(entry.Key)))==entry.Value),"Arquivos de usuário alterados pelo atualizador");
     var reopened=new NexusStore(userdata);reopened.Login("update-fixture","temporary12345");
+    Assert(reopened.AuthenticateApiKey(preservedToken).DatabaseIds.Contains(database.Id),"Chave de API não preservada");
     Assert((string)reopened.Execute(database.Id,"SELECT nome FROM exemplo").Table.Rows[0][0]=="preservado","Login/dados não preservados");
     if(args.Length==3)
     {

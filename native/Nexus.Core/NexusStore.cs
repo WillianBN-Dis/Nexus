@@ -22,6 +22,8 @@ public sealed partial class NexusStore
         using var cmd=c.CreateCommand();
         cmd.CommandText="CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,name TEXT UNIQUE,salt BLOB,hash BLOB); CREATE TABLE IF NOT EXISTS databases(id TEXT PRIMARY KEY,owner TEXT,name TEXT,path TEXT UNIQUE);";
         cmd.ExecuteNonQuery();
+        using var api=c.CreateCommand();
+        api.CommandText="CREATE TABLE IF NOT EXISTS api_keys(id TEXT PRIMARY KEY,owner TEXT NOT NULL,name TEXT NOT NULL,hash BLOB NOT NULL UNIQUE,can_write INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS api_grants(key_id TEXT NOT NULL,database_id TEXT NOT NULL,PRIMARY KEY(key_id,database_id));";api.ExecuteNonQuery();
     }
     private static SqliteConnection Open(string path,bool create=false)
     {

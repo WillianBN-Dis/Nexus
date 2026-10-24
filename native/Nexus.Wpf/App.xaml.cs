@@ -16,7 +16,9 @@ public partial class App:Application
         {
             await NativeUiChecks.Run(this,e.Args);return;
         }
-        var window=new MainWindow();MainWindow=window;window.Show();
+        var window=new MainWindow();MainWindow=window;
+        if(e.Args.Contains("--startup-check"))window.Show();
+        else{ShutdownMode=ShutdownMode.OnExplicitShutdown;await window.InitializeBackground(e.Args.Contains("--background"));}
         if(!e.Args.Contains("--startup-check"))window.StartUpdateChecks();
         if(e.Args.Contains("--startup-check"))
         {

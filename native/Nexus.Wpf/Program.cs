@@ -13,7 +13,12 @@ internal static class Program
         if(!diagnostic&&!hook)
         {
             try{acquired=instance.WaitOne(0);}catch(AbandonedMutexException){acquired=true;}
-            if(!acquired){System.Windows.MessageBox.Show("O Nexus já está aberto. Use a janela existente.","Nexus");return;}
+            if(!acquired)
+            {
+                try{using var signal=EventWaitHandle.OpenExisting("Local\\Nexus.Open");signal.Set();}
+                catch(WaitHandleCannotBeOpenedException){System.Windows.MessageBox.Show("O Nexus já está aberto. Use a janela existente.","Nexus");}
+                return;
+            }
         }
         // Update handling must run before WPF creates any windows or opens user data.
         try

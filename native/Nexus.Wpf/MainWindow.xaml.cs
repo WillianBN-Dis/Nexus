@@ -355,7 +355,10 @@ public partial class MainWindow:Window
         DatabaseTitle.ToolTip=DatabasePath.Text;
     }
     private void Window_Closing(object? sender,CancelEventArgs e)
-    {if(busy){queryCancellation?.Cancel();e.Cancel=true;SetStatus("Aguarde a operação terminar antes de fechar.");}}
+    {
+        if(busy){queryCancellation?.Cancel();e.Cancel=true;SetStatus("Aguarde a operação terminar antes de fechar.");return;}
+        if(tray is not null&&!exiting){e.Cancel=true;HideToTray();}
+    }
     private void Window_KeyDown(object sender,KeyEventArgs e)
     {
         if(busy){if(e.Key==Key.Escape)queryCancellation?.Cancel();e.Handled=true;return;}

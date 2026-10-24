@@ -18,7 +18,21 @@ internal static class NativeUiChecks
         {
             var window=new MainWindow(data);app.MainWindow=window;window.Show();
             await window.ExerciseAsync(output);
-            System.IO.File.WriteAllText(System.IO.Path.Combine(output,"ui-result.txt"),"PASS: WPF real. Login, tamanhos, cadastro, tabela, validação, registro, edição, coluna, SQL, alternância, cancelamento, responsividade, recarga estável, status no header, confirmação temática, DELETAR e layout SQL sem arraste/tooltip.\n");
+            await window.InitializeBackground(false);
+            var auth=new NexusStore(data);auth.Login("interface","temporary12345");
+            var token=auth.CreateApiKey("bandeja",false,[auth.List().First().Id]);
+            var socket=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);socket.Start();
+            int port=((System.Net.IPEndPoint)socket.LocalEndpoint).Port;socket.Stop();
+            await window.ApiHost!.ConfigureAsync(new Nexus.Api.ApiSettings(true,"127.0.0.1",port));
+            window.Close();
+            AssertBackground(!window.IsVisible,"fechar não ocultou a janela na bandeja");
+            using var client=new System.Net.Http.HttpClient();client.DefaultRequestHeaders.Authorization=new("Bearer",token);
+            using var response=await client.GetAsync(window.ApiHost.Address+"/api/bancos");
+            AssertBackground(response.IsSuccessStatusCode,"API não continuou atendendo com a janela fechada");
+            window.ShowFromTray();AssertBackground(window.IsVisible,"não restaurou a janela da bandeja");
+            if(window.ApiHost is not null)await window.ApiHost.DisposeAsync();
+            window.AllowTestExit();
+            System.IO.File.WriteAllText(System.IO.Path.Combine(output,"ui-result.txt"),"PASS: WPF real. Login, tamanhos, CRUD visual, SQL, cancelamento, layout, API e rede, bandeja e atendimento HTTP com janela fechada.\n");
             window.Close();app.Shutdown(0);
         }
         catch(Exception error)
@@ -28,9 +42,11 @@ internal static class NativeUiChecks
         }
         finally{if(System.IO.Directory.Exists(data))System.IO.Directory.Delete(data,true);}
     }
+    private static void AssertBackground(bool condition,string message){if(!condition)throw new InvalidOperationException(message);}
 }
 public partial class MainWindow
 {
+    internal void AllowTestExit()=>exiting=true;
     private static void AssertUi(bool condition,string message){if(!condition)throw new InvalidOperationException("UI check: "+message);}
     private async Task Settle()
     {await Dispatcher.InvokeAsync(()=>UpdateLayout(),DispatcherPriority.ApplicationIdle);await Task.Delay(200);}
@@ -195,6 +211,14 @@ public partial class MainWindow
             AssertUi(ScrollViewer.GetVerticalScrollBarVisibility(Databases)==ScrollBarVisibility.Hidden,"barra de bancos visível");
             AssertUi(TableData.ActualHeight>50&&NextPage.IsVisible,"layout do workspace: "+TableData.ActualHeight+" visible="+NextPage.IsVisible+" mode="+WorkspaceTabs.SelectedIndex);
         }
+        var apiDialog=new ApiSettingsDialog(this,store!,new Nexus.Api.LocalApiHost(store!.Root));
+        await Modal(apiDialog,()=>
+        {
+            apiDialog.UpdateLayout();
+            var image=new RenderTargetBitmap((int)apiDialog.ActualWidth,(int)apiDialog.ActualHeight,96,96,PixelFormats.Pbgra32);image.Render((Visual)apiDialog.Content);
+            var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(image));using(var file=System.IO.File.Create(System.IO.Path.Combine(output,"07-api-rede.png")))encoder.Save(file);
+            apiDialog.SubmitForTest();return Task.CompletedTask;
+        });
         Logout_Click(this,new());AssertUi(LoginView.Visibility==Visibility.Visible,"logout");
     }
 }

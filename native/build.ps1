@@ -1,4 +1,4 @@
-param([switch]$SkipTests, [string]$Version = '1.0.0')
+param([switch]$SkipTests, [string]$Version = '1.1.0')
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Use uma versão estável, por exemplo 1.0.1.' }
 $nexusRoot = Split-Path $PSScriptRoot -Parent
@@ -15,6 +15,8 @@ try {
     if (-not $SkipTests) {
         & $dotnetPath run --project native/Nexus.Smoke/Nexus.Smoke.csproj -c Release
         if ($LASTEXITCODE -ne 0) { throw 'Os testes do núcleo falharam.' }
+        & $dotnetPath run --project native/Nexus.ApiSmoke/Nexus.ApiSmoke.csproj -c Release
+        if ($LASTEXITCODE -ne 0) { throw 'Os testes da API falharam.' }
         & $dotnetPath build native/Nexus.Wpf/Nexus.Wpf.csproj -c Release "-p:Version=$Version" "-p:InformationalVersion=$Version" --nologo
         if ($LASTEXITCODE -ne 0) { throw 'A compilação WPF falhou.' }
         & $dotnetPath native/Nexus.Wpf/bin/Release/net10.0-windows/Nexus.dll --ui-test

@@ -9,6 +9,7 @@ public partial class MainWindow
 {
     private UpdateManager? updater;
     private bool checkingUpdates;
+    private string? notifiedUpdate;
     private readonly DispatcherTimer updateTimer=new(){Interval=TimeSpan.FromHours(6)};
     internal void StartUpdateChecks()
     {
@@ -64,9 +65,14 @@ public partial class MainWindow
     {
         UpdateMessage.Text="Nexus "+updater!.UpdatePendingRestart!.Version+" pronto. Será instalado na próxima abertura.";
         RestartUpdateButton.Visibility=Visibility.Visible;UpdateNotice.Visibility=Visibility.Visible;
+        if(!IsVisible&&tray is not null&&notifiedUpdate!=updater.UpdatePendingRestart.Version.ToString())
+        {
+            notifiedUpdate=updater.UpdatePendingRestart.Version.ToString();
+            tray.ShowBalloonTip(5000,"Nexus · Atualização pronta","Use Atualizar e reiniciar no menu da bandeja quando quiser aplicar a atualização.",System.Windows.Forms.ToolTipIcon.Info);
+        }
     }
     private void DismissUpdate_Click(object sender,RoutedEventArgs e)=>UpdateNotice.Visibility=Visibility.Collapsed;
-    private void RestartUpdate_Click(object sender,RoutedEventArgs e)
+    private async void RestartUpdate_Click(object sender,RoutedEventArgs e)
     {
         if(busy||OwnedWindows.Count>0)
         {
@@ -75,8 +81,18 @@ public partial class MainWindow
         try
         {
             var pending=updater?.UpdatePendingRestart;
-            if(pending is not null)updater!.ApplyUpdatesAndRestart(pending);
+            if(pending is not null)
+            {
+                if(ApiHost is not null)await ApiHost.DisposeAsync();
+                if(tray is not null)tray.Visible=false;
+                updater!.ApplyUpdatesAndRestart(pending);
+            }
         }
-        catch { ShowUpdateMessage("Não foi possível reiniciar. Feche e abra o Nexus para aplicar a atualização."); }
+        catch
+        {
+            if(tray is not null)tray.Visible=true;
+            if(ApiHost is not null)try{await ApiHost.RestoreAsync();}catch{ }
+            ShowUpdateMessage("Não foi possível reiniciar. Encerre o Nexus pela bandeja e abra novamente para aplicar a atualização.");
+        }
     }
 }

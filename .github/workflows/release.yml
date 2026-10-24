@@ -45,6 +45,7 @@ jobs:
           Instale pelo arquivo Nexus-Setup.exe. O runtime .NET está incluído.
           Atualizações são baixadas automaticamente e aplicadas na próxima abertura.
           Contas locais e bancos existentes são preservados.
+          API, segundo plano e logs: https://github.com/$env:GH_REPO/blob/main/API.md
 
           Guia e histórico: https://github.com/$env:GH_REPO/blob/main/CHANGELOG.md
           "@

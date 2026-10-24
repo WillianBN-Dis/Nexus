@@ -1,5 +1,5 @@
 #ifndef NexusVersion
-  #define NexusVersion "1.0.0"
+  #define NexusVersion "1.1.0"
 #endif
 #ifndef NexusPayload
   #error "Use native/build.ps1 para preparar o pacote do instalador."
@@ -38,3 +38,6 @@ Name: "{group}\Nexus"; Filename: "{app}\Nexus.exe"
 Name: "{autodesktop}\Nexus"; Filename: "{app}\Nexus.exe"; Tasks: desktopicon
 [Run]
 Filename: "{app}\Nexus.exe"; Description: "Abrir Nexus"; Flags: nowait postinstall skipifsilent
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "Nexus"; Flags: uninsdeletevalue; ValueType: none

@@ -6,6 +6,7 @@ public sealed record ColumnSpec(string Name,string Type,bool Required=false);
 public sealed record TableInfo(IReadOnlyList<ColumnInfo> Columns,IReadOnlyList<string> Identity);
 public sealed record RowSnapshot(object?[] Key,object?[] Values);
 public sealed record TablePage(TableInfo Info,DataTable Table,IReadOnlyList<RowSnapshot> Rows,bool HasMore);
+public sealed class RecordConflictException(string message):ArgumentException(message);
 
 public sealed partial class NexusStore
 {
@@ -49,13 +50,16 @@ public sealed partial class NexusStore
         using var c=Database(id);Schema(c,table);using var cmd=Command(c,$"ALTER TABLE {Quote(table)} ADD COLUMN {Quote(name.Trim())} {type}");cmd.ExecuteNonQuery();
     }
     public void DropTable(string id,string table){using var c=Database(id);Schema(c,table);using var cmd=Command(c,$"DROP TABLE {Quote(table)}");cmd.ExecuteNonQuery();}
-    public TablePage BrowsePage(string id,string table,string? sort=null,bool descending=false,int offset=0)
+    public TablePage BrowsePage(string id,string table,string? sort=null,bool descending=false,int offset=0,string? filterColumn=null,string? filterValue=null)
     {
         using var c=Database(id);var info=Schema(c,table);var names=info.Columns.Select(col=>col.Name).ToList();
         if(sort is not null&&!names.Contains(sort))throw new ArgumentException("Coluna de ordenação não encontrada.");
+        if(filterColumn is not null&&!names.Contains(filterColumn))throw new ArgumentException("Coluna do filtro não encontrada.");
+        var filter=filterColumn is null?"":$" WHERE {Quote(filterColumn)} IS $p1";
         var order=sort is null?"":$" ORDER BY {Quote(sort)} "+(descending?"DESC":"ASC");
         var fields=info.Identity.Concat(names).Select(Quote);
-        using var cmd=Command(c,$"SELECT {string.Join(", ",fields)} FROM {Quote(table)}{order} LIMIT 201 OFFSET $p0",Math.Max(0,offset));
+        using var cmd=filterColumn is null?Command(c,$"SELECT {string.Join(", ",fields)} FROM {Quote(table)}{order} LIMIT 201 OFFSET $p0",Math.Max(0,offset))
+            :Command(c,$"SELECT {string.Join(", ",fields)} FROM {Quote(table)}{filter}{order} LIMIT 201 OFFSET $p0",Math.Max(0,offset),filterValue);
         using var reader=cmd.ExecuteReader();var result=new DataTable();
         foreach(var name in names)result.Columns.Add(name,typeof(object));
         var records=new List<RowSnapshot>();bool more=false;
@@ -92,7 +96,7 @@ public sealed partial class NexusStore
         if(!delete&&values.Count==0)return;
         var sql=delete?$"DELETE FROM {Quote(table)} WHERE {string.Join(" AND ",where)}":$"UPDATE {Quote(table)} SET {assignments} WHERE {string.Join(" AND ",where)}";
         using var cmd=Command(c,sql,args.ToArray());cmd.Transaction=tx;
-        if(cmd.ExecuteNonQuery()!=1)throw new ArgumentException("O registro foi alterado por outro processo. Atualize antes de tentar novamente.");
+        if(cmd.ExecuteNonQuery()!=1)throw new RecordConflictException("O registro foi alterado por outro processo. Atualize antes de tentar novamente.");
         tx.Commit();
     }
 }
